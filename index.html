@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - My Website</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        nav li {
+            margin-left: 1.5rem;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        nav a:hover {
+            color: #ccc;
+        }
+        
+        nav a.active {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .online-indicator {
+            display: flex;
+            align-items: center;
+        }
+        
+        .indicator-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .chat-room {
+            display: flex;
+            height: 500px;
+        }
+        
+        .users-panel {
+            width: 200px;
+            background-color: #f5f5f5;
+            padding: 15px;
+            overflow-y: auto;
+            border-right: 1px solid #ddd;
+        }
+        
+        .user-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .user-item {
+            padding: 8px 5px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .user-item:hover {
+            background-color: #e9e9e9;
+        }
+        
+        .user-status {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background-color: #00ff00;
+        }
+        
+        .status-away {
+            background-color: #ffcc00;
+        }
+        
+        .status-offline {
+            background-color: #ccc;
+        }
+        
+        .messages-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+        }
+        
+        .messages-container {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+        
+        .message-incoming {
+            align-self: flex-start;
+        }
+        
+        .message-outgoing {
+            align-self: flex-end;
+            margin-left: auto;
+        }
+        
+        .message-bubble {
+            padding: 10px 15px;
+            border-radius: 18px;
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+        
+        .message-incoming .message-bubble {
+            background-color: #f1f0f0;
+        }
+        
+        .message-outgoing .message-bubble {
+            background-color: #dcf8c6;
+        }
+        
+        .message-sender {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 2px;
+        }
+        
+        .message-time {
+            font-size: 0.7rem;
+            color: #999;
+            margin-top: 2px;
+            text-align: right;
+        }
+        
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-top: 1px solid #ddd;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 18px;
+            outline: none;
+        }
+        
+        .send-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .music-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+        
+        .music-player h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+        }
+        
+        @media (max-width: 768px) {
+            .chat-room {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .users-panel {
+                width: 100%;
+                height: 100px;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+            
+            .user-list {
+                display: flex;
+                overflow-x: auto;
+            }
+            
+            .user-item {
+                margin-right: 10px;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">My Website</div>
+        <nav>
+            <ul>
+                <li><a href="#">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="#" class="active">Chat</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    
+    <div class="main-content">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2>Chat Room</h2>
+                <div class="online-indicator">
+                    <span class="indicator-dot"></span>
+                    <span id="online-count">5 users online</span>
+                </div>
+            </div>
+            
+            <div class="chat-room">
+                <div class="users-panel">
+                    <h3>Online Users</h3>
+                    <ul class="user-list" id="user-list">
+                        <li class="user-item">
+                            <span class="user-status status-online"></span>
+                            <span>Sarah Johnson</span>
+                        </li>
+                        <li class="user-item">
+                            <span class="user-status status-online"></span>
+                            <span>David Miller</span>
+                        </li>
+                        <li class="user-item">
+                            <span class="user-status status-away"></span>
+                            <span>Michael Chen</span>
+                        </li>
+                        <li class="user-item">
+                            <span class="user-status status-online"></span>
+                            <span>Alex Turner</span>
+                        </li>
+                        <li class="user-item">
+                            <span class="user-status status-offline"></span>
+                            <span>Emma Parker</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="messages-panel">
+                    <div class="messages-container" id="messages-container">
+                        <div class="message message-incoming">
+                            <div class="message-sender">Sarah Johnson</div>
+                            <div class="message-bubble">
+                                <div class="message-content">Hey everyone! How's it going?</div>
+                                <div class="message-time">10:15 AM</div>
+                            </div>
+                        </div>
+                        
+                        <div class="message message-incoming">
+                            <div class="message-sender">David Miller</div>
+                            <div class="message-bubble">
+                                <div class="message-content">Not bad! Just working on that project we discussed yesterday.</div>
+                                <div class="message-time">10:17 AM</div>
+                            </div>
+                        </div>
+                        
+                        <div class="message message-outgoing">
+                            <div class="message-bubble">
+                                <div class="message-content">Hi everyone! I'm new here.</div>
+                                <div class="message-time">10:20 AM</div>
+                            </div>
+                        </div>
+                        
+                        <div class="message message-incoming">
+                            <div class="message-sender">Sarah Johnson</div>
+                            <div class="message-bubble">
+                                <div class="message-content">Welcome! Glad you could join us!</div>
+                                <div class="message-time">10:21 AM</div>
+                            </div>
+                        </div>
+                        
+                        <div class="message message-incoming">
+                            <div class="message-sender">Alex Turner</div>
+                            <div class="message-bubble">
+                                <div class="message-content">Has anyone used Reflex for a production app? I'm considering it for a new project.</div>
+                                <div class="message-time">10:25 AM</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="input-area">
+                        <input type="text" class="message-input" id="message-input" placeholder="Type a message...">
+                        <button class="send-button" id="send-button">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="music-player">
+        <h3>Music Player</h3>
+        <audio controls>
+            <source src="#" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 My Website. All rights reserved.</p>
+    </footer>
+    
+    <script>
+        // Simulating connection to Reflex server
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+            const messagesContainer = document.getElementById('messages-container');
+            const userList = document.getElementById('user-list');
+            const onlineCount = document.getElementById('online-count');
+            
+            // Simulate connection status
+            console.log("Connecting to Reflex server...");
+            setTimeout(() => {
+                console.log("Connected to Reflex server!");
+            }, 1000);
+            
+            // Send message function
+            function sendMessage() {
+                const messageText = messageInput.value.trim();
+                if (messageText === '') return;
+                
+                const currentTime = new Date();
+                const timeString = currentTime.getHours() + ':' + 
+                                  (currentTime.getMinutes() < 10 ? '0' : '') + 
+                                  currentTime.getMinutes();
+                
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message message-outgoing';
+                messageElement.innerHTML = `
+                    <div class="message-bubble">
+                        <div class="message-content">${messageText}</div>
+                        <div class="message-time">${timeString}</div>
+                    </div>
+                `;
+                
+                messagesContainer.appendChild(messageElement);
+                messageInput.value = '';
+                
+                // Scroll to bottom
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                // Simulate server response
+                simulateResponse(messageText);
+            }
+            
+            // Simulate response from another user
+            function simulateResponse(originalMessage) {
+                // Randomly choose a user to respond
+                const users = ['Sarah Johnson', 'David Miller', 'Michael Chen', 'Alex Turner'];
+                const randomUser = users[Math.floor(Math.random() * users.length)];
+                
+                // Generate a contextual response
+                let responseText;
+                if (originalMessage.toLowerCase().includes('hello') || 
+                    originalMessage.toLowerCase().includes('hi')) {
+                    responseText = "Hey there! How are you doing today?";
+                } else if (originalMessage.toLowerCase().includes('reflex')) {
+                    responseText = "Reflex is great for building real-time apps. I've been using it for a few months now.";
+                } else if (originalMessage.toLowerCase().includes('project')) {
+                    responseText = "What kind of project are you working on? Maybe we can collaborate!";
+                } else if (originalMessage.includes('?')) {
+                    responseText = "That's an interesting question! I'll need to think about it.";
+                } else {
+                    const responses = [
+                        "That's interesting!",
+                        "I see what you mean.",
+                        "Makes sense to me.",
+                        "I've been thinking about that too.",
+                        "Have you considered trying a different approach?"
+                    ];
+                    responseText = responses[Math.floor(Math.random() * responses.length)];
+                }
+                
+                // Delay the response to make it feel more realistic
+                setTimeout(() => {
+                    const currentTime = new Date();
+                    const timeString = currentTime.getHours() + ':' + 
+                                      (currentTime.getMinutes() < 10 ? '0' : '') + 
+                                      currentTime.getMinutes();
+                    
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message message-incoming';
+                    messageElement.innerHTML = `
+                        <div class="message-sender">${randomUser}</div>
+                        <div class="message-bubble">
+                            <div class="message-content">${responseText}</div>
+                            <div class="message-time">${timeString}</div>
+                        </div>
+                    `;
+                    
+                    messagesContainer.appendChild(messageElement);
+                    
+                    // Scroll to bottom
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 1500 + Math.random() * 2000);
+            }
+            
+            // Set up event listeners
+            sendButton.addEventListener('click', sendMessage);
+            
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Simulate user status changes
+            setInterval(() => {
+                // Randomly change a user's status
+                const userItems = userList.querySelectorAll('.user-item');
+                const randomIndex = Math.floor(Math.random() * userItems.length);
+                const randomUser = userItems[randomIndex];
+                const statusIndicator = randomUser.querySelector('.user-status');
+                
+                const statuses = ['status-online', 'status-away', 'status-offline'];
+                
+                // Get current status
+                let currentStatus;
+                for (let status of statuses) {
+                    if (statusIndicator.classList.contains(status)) {
+                        currentStatus = status;
+                        break;
+                    }
+                }
+                
+                // Choose a different status
+                let newStatus;
+                do {
+                    newStatus = statuses[Math.floor(Math.random() * statuses.length)];
+                } while (newStatus === currentStatus);
+                
+                // Update status
+                statusIndicator.classList.remove(currentStatus);
+                statusIndicator.classList.add(newStatus);
+                
+                // Update online count
+                const onlineUsers = userList.querySelectorAll('.status-online').length;
+                onlineCount.textContent = `${onlineUsers} users online`;
+                
+            }, 30000); // Every 30 seconds
+            
+            // Simulate new messages from other users occasionally
+            setInterval(() => {
+                if (Math.random() < 0.3) { // 30% chance of a new message
+                    const users = ['Sarah Johnson', 'David Miller', 'Michael Chen', 'Alex Turner'];
+                    const randomUser = users[Math.floor(Math.random() * users.length)];
+                    
+                    const messages = [
+                        "Has anyone tried the new features in Reflex?",
+                        "I'm working on a new project using Reflex. It's pretty cool!",
+                        "The real-time capabilities of Reflex are impressive.",
+                        "What's everyone working on today?",
+                        "Just pushed some updates to our shared repository.",
+                        "Any recommendations for good resources on building with Reflex?",
+                        "This chat interface is coming along nicely!"
+                    ];
+                    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                    
+                    const currentTime = new Date();
+                    const timeString = currentTime.getHours() + ':' + 
+                                      (currentTime.getMinutes() < 10 ? '0' : '') + 
+                                      currentTime.getMinutes();
+                    
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message message-incoming';
+                    messageElement.innerHTML = `
+                        <div class="message-sender">${randomUser}</div>
+                        <div class="message-bubble">
+                            <div class="message-content">${randomMessage}</div>
+                            <div class="message-time">${timeString}</div>
+                        </div>
+                    `;
+                    
+                    messagesContainer.appendChild(messageElement);
+                    
+                    // Scroll to bottom if near bottom
+                    if (messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 100) {
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
+                }
+            }, 45000); // Every 45 seconds
+        });
+    </script>
+</body>
+</html>
