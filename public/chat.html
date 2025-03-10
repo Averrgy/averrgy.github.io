@@ -52,17 +52,19 @@
         .main-content {
             flex: 1;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .chat-container {
-            width: 100%;
-            max-width: 800px;
+            flex: 1;
             display: flex;
             flex-direction: column;
             height: 70vh;
+            margin-right: 1.5rem;
         }
         
         .chat-header {
@@ -143,12 +145,12 @@
         }
         
         .user-list {
-            margin-top: 2rem;
-            width: 100%;
-            max-width: 800px;
+            width: 250px;
+            min-width: 200px;
         }
         
         .user-list h3 {
+            margin-top: 0;
             margin-bottom: 0.5rem;
         }
         
@@ -157,6 +159,8 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 1rem;
+            height: calc(70vh - 2rem);
+            overflow-y: auto;
         }
         
         .user-item {
@@ -252,6 +256,29 @@
             margin-top: 0.5rem;
             font-size: 0.9rem;
         }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+                padding: 1rem;
+            }
+            
+            .chat-container {
+                margin-right: 0;
+                margin-bottom: 1.5rem;
+                height: 50vh;
+            }
+            
+            .user-list {
+                width: 100%;
+            }
+            
+            .online-users {
+                height: auto;
+                max-height: 200px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -339,7 +366,7 @@
         let socket;
         
         // Set the password here - CHANGE THIS TO YOUR DESIRED PASSWORD
-        const correctPassword = "hatty";
+        const correctPassword = "hatchat123";
         
         // DOM elements
         const chatMessages = document.getElementById('chat-messages');
