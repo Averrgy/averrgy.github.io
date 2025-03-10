@@ -73,14 +73,6 @@
             border-radius: 8px 8px 0 0;
             border: 1px solid #ddd;
             border-bottom: none;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .chat-controls {
-            display: flex;
-            gap: 10px;
         }
         
         .chat-messages {
@@ -150,34 +142,6 @@
         
         .chat-button:hover {
             background-color: #555;
-        }
-        
-        .save-button {
-            padding: 0.5rem 1rem;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        
-        .save-button:hover {
-            background-color: #45a049;
-        }
-        
-        .load-button {
-            padding: 0.5rem 1rem;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        
-        .load-button:hover {
-            background-color: #0b7dda;
         }
         
         .user-list {
@@ -287,26 +251,6 @@
             font-size: 1rem;
         }
         
-        .chat-logs {
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-top: 1rem;
-            height: 200px;
-            overflow-y: auto;
-        }
-        
-        .log-item {
-            padding: 0.5rem;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-        }
-        
-        .log-item:hover {
-            background-color: #f5f5f5;
-        }
-        
         .error-message {
             color: #f44336;
             margin-top: 0.5rem;
@@ -334,15 +278,6 @@
                 height: auto;
                 max-height: 200px;
             }
-            
-            .chat-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .chat-controls {
-                margin-top: 0.5rem;
-            }
         }
     </style>
 </head>
@@ -363,14 +298,8 @@
     <div class="main-content">
         <div class="chat-container">
             <div class="chat-header">
-                <div>
-                    <h2>Live Chat</h2>
-                    <p id="connection-status">Connecting...</p>
-                </div>
-                <div class="chat-controls">
-                    <button id="save-chat" class="save-button">Save Chat</button>
-                    <button id="load-chat" class="load-button">Load Chat</button>
-                </div>
+                <h2>Live Chat</h2>
+                <p id="connection-status">Connecting...</p>
             </div>
             <div class="chat-messages" id="chat-messages">
                 <!-- Messages will be added here -->
@@ -426,44 +355,15 @@
         </div>
     </div>
     
-    <!-- Save Chat Modal -->
-    <div class="modal" id="save-chat-modal">
-        <div class="modal-content">
-            <h2>Save Chat</h2>
-            <form id="save-chat-form">
-                <div class="form-group">
-                    <label for="chat-name-input">Chat Name:</label>
-                    <input type="text" class="form-input" id="chat-name-input" placeholder="Enter a name for this chat" required>
-                </div>
-                <button type="submit" class="form-button">Save</button>
-                <button type="button" class="form-button" id="cancel-save" style="margin-top: 10px; background-color: #f44336;">Cancel</button>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Load Chat Modal -->
-    <div class="modal" id="load-chat-modal">
-        <div class="modal-content">
-            <h2>Load Chat</h2>
-            <div id="chat-logs" class="chat-logs">
-                <!-- Saved chats will be listed here -->
-                <div class="log-item" style="text-align: center; color: #666;">No saved chats found</div>
-            </div>
-            <button type="button" class="form-button" id="cancel-load" style="margin-top: 10px; background-color: #f44336;">Cancel</button>
-        </div>
-    </div>
-    
     <footer>
         <p>&copy; 2025 My Website. All rights reserved.</p>
     </footer>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="js/chat-saver.js"></script>
     <script>
         // Initialize variables
         let username = '';
         let socket;
-        let chatHistory = [];
         
         // Set the password here - CHANGE THIS TO YOUR DESIRED PASSWORD
         const correctPassword = "hatty";
@@ -481,18 +381,6 @@
         const passwordInput = document.getElementById('password-input');
         const passwordError = document.getElementById('password-error');
         const connectionStatus = document.getElementById('connection-status');
-        const saveButton = document.getElementById('save-chat');
-        const loadButton = document.getElementById('load-chat');
-        const saveChatModal = document.getElementById('save-chat-modal');
-        const loadChatModal = document.getElementById('load-chat-modal');
-        const saveChatForm = document.getElementById('save-chat-form');
-        const chatNameInput = document.getElementById('chat-name-input');
-        const chatLogs = document.getElementById('chat-logs');
-        const cancelSave = document.getElementById('cancel-save');
-        const cancelLoad = document.getElementById('cancel-load');
-        
-        // Initialize chat saver utility
-        const chatSaver = new ChatSaver();
         
         // Show password modal on page load
         window.addEventListener('DOMContentLoaded', () => {
@@ -529,48 +417,6 @@
             }
         });
         
-        // Save chat button listener
-        saveButton.addEventListener('click', () => {
-            if (chatHistory.length === 0) {
-                alert('No messages to save');
-                return;
-            }
-            
-            saveChatModal.style.display = 'flex';
-            chatNameInput.focus();
-        });
-        
-        // Load chat button listener
-        loadButton.addEventListener('click', () => {
-            // Populate the chat logs
-            updateChatLogsList();
-            loadChatModal.style.display = 'flex';
-        });
-        
-        // Cancel save button
-        cancelSave.addEventListener('click', () => {
-            saveChatModal.style.display = 'none';
-        });
-        
-        // Cancel load button
-        cancelLoad.addEventListener('click', () => {
-            loadChatModal.style.display = 'none';
-        });
-        
-        // Handle save chat form submission
-        saveChatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const chatName = chatNameInput.value.trim();
-            if (!chatName) return;
-            
-            saveCurrentChat(chatName);
-            saveChatModal.style.display = 'none';
-            chatNameInput.value = '';
-            
-            alert(`Chat saved as "${chatName}"`);
-        });
-        
         function initializeChat() {
             // Connect to the Socket.IO server with the username
             socket = io('https://averrgy-github-io.onrender.com', {
@@ -594,26 +440,10 @@
             });
             
             socket.on('chat_message', (data) => {
-                // Add message to history
-                chatHistory.push({
-                    type: 'message',
-                    username: data.username,
-                    message: data.message,
-                    timestamp: new Date().toISOString(),
-                    isMine: data.username === username
-                });
-                
                 displayMessage(data.username, data.message, data.username === username);
             });
             
             socket.on('user_join', (data) => {
-                // Add join event to history
-                chatHistory.push({
-                    type: 'join',
-                    username: data.username,
-                    timestamp: new Date().toISOString()
-                });
-                
                 const joinMessage = document.createElement('div');
                 joinMessage.textContent = `${data.username} has joined the chat`;
                 joinMessage.style.textAlign = 'center';
@@ -627,13 +457,6 @@
             });
             
             socket.on('user_leave', (data) => {
-                // Add leave event to history
-                chatHistory.push({
-                    type: 'leave',
-                    username: data.username,
-                    timestamp: new Date().toISOString()
-                });
-                
                 const leaveMessage = document.createElement('div');
                 leaveMessage.textContent = `${data.username} has left the chat`;
                 leaveMessage.style.textAlign = 'center';
@@ -705,121 +528,6 @@
                 
                 onlineUsers.appendChild(userItem);
             });
-        }
-        
-        // Save the current chat
-        function saveCurrentChat(chatName) {
-            const chatData = {
-                name: chatName,
-                date: new Date().toISOString(),
-                username: username,
-                history: chatHistory
-            };
-            
-            chatSaver.saveChat(chatData);
-        }
-        
-        // Update the chat logs list
-        function updateChatLogsList() {
-            const savedChats = chatSaver.getSavedChats();
-            chatLogs.innerHTML = '';
-            
-            if (savedChats.length === 0) {
-                const noChatsMessage = document.createElement('div');
-                noChatsMessage.className = 'log-item';
-                noChatsMessage.style.textAlign = 'center';
-                noChatsMessage.style.color = '#666';
-                noChatsMessage.textContent = 'No saved chats found';
-                chatLogs.appendChild(noChatsMessage);
-                return;
-            }
-            
-            savedChats.forEach((chat, index) => {
-                const chatDate = new Date(chat.date);
-                
-                const logItem = document.createElement('div');
-                logItem.className = 'log-item';
-                logItem.innerHTML = `
-                    <strong>${chat.name}</strong><br>
-                    <small>Saved on: ${chatDate.toLocaleDateString()} ${chatDate.toLocaleTimeString()}</small>
-                    <small style="float: right">
-                        <button class="load-chat-btn" data-index="${index}" style="border: none; background: none; color: blue; cursor: pointer; text-decoration: underline;">Load</button>
-                        <button class="delete-chat-btn" data-index="${index}" style="border: none; background: none; color: red; cursor: pointer; text-decoration: underline; margin-left: 5px;">Delete</button>
-                    </small>
-                `;
-                
-                chatLogs.appendChild(logItem);
-            });
-            
-            // Add event listeners for load and delete buttons
-            document.querySelectorAll('.load-chat-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const index = e.target.getAttribute('data-index');
-                    loadChat(index);
-                });
-            });
-            
-            document.querySelectorAll('.delete-chat-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const index = e.target.getAttribute('data-index');
-                    deleteChat(index);
-                });
-            });
-        }
-        
-        // Load a saved chat
-        function loadChat(index) {
-            const savedChats = chatSaver.getSavedChats();
-            const chat = savedChats[index];
-            
-            if (!chat) return;
-            
-            // Clear chat messages
-            chatMessages.innerHTML = '';
-            
-            // Reset history
-            chatHistory = chat.history;
-            
-            // Display messages
-            chat.history.forEach(item => {
-                if (item.type === 'message') {
-                    displayMessage(item.username, item.message, item.isMine);
-                } else if (item.type === 'join') {
-                    const joinMessage = document.createElement('div');
-                    joinMessage.textContent = `${item.username} has joined the chat`;
-                    joinMessage.style.textAlign = 'center';
-                    joinMessage.style.margin = '0.5rem 0';
-                    joinMessage.style.fontStyle = 'italic';
-                    joinMessage.style.color = '#666';
-                    chatMessages.appendChild(joinMessage);
-                } else if (item.type === 'leave') {
-                    const leaveMessage = document.createElement('div');
-                    leaveMessage.textContent = `${item.username} has left the chat`;
-                    leaveMessage.style.textAlign = 'center';
-                    leaveMessage.style.margin = '0.5rem 0';
-                    leaveMessage.style.fontStyle = 'italic';
-                    leaveMessage.style.color = '#666';
-                    chatMessages.appendChild(leaveMessage);
-                }
-            });
-            
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            loadChatModal.style.display = 'none';
-            
-            alert(`Loaded chat "${chat.name}"`);
-        }
-        
-        // Delete a saved chat
-        function deleteChat(index) {
-            const savedChats = chatSaver.getSavedChats();
-            const chat = savedChats[index];
-            
-            if (!chat) return;
-            
-            if (confirm(`Are you sure you want to delete the chat "${chat.name}"?`)) {
-                chatSaver.deleteChat(index);
-                updateChatLogsList();
-            }
         }
     </script>
 </body>
