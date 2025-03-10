@@ -197,7 +197,7 @@
             margin-top: auto;
         }
         
-        .username-modal {
+        .modal {
             display: none;
             position: fixed;
             top: 0;
@@ -222,20 +222,22 @@
             margin-top: 0;
         }
         
-        .username-form {
-            display: flex;
-            flex-direction: column;
+        .form-group {
+            margin-bottom: 1rem;
         }
         
-        .username-input {
+        .form-input {
+            width: 100%;
             padding: 0.7rem;
-            margin-bottom: 1rem;
+            margin-top: 0.3rem;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 1rem;
+            box-sizing: border-box;
         }
         
-        .username-button {
+        .form-button {
+            width: 100%;
             padding: 0.7rem;
             background-color: #333;
             color: white;
@@ -243,6 +245,12 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 1rem;
+        }
+        
+        .error-message {
+            color: #f44336;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -291,12 +299,31 @@
         </audio>
     </div>
     
-    <div class="username-modal" id="username-modal">
+    <!-- Password Modal -->
+    <div class="modal" id="password-modal">
+        <div class="modal-content">
+            <h2>Enter Password</h2>
+            <form id="password-form">
+                <div class="form-group">
+                    <label for="password-input">Password:</label>
+                    <input type="password" class="form-input" id="password-input" required>
+                    <div class="error-message" id="password-error" style="display: none;">Incorrect password. Please try again.</div>
+                </div>
+                <button type="submit" class="form-button">Submit</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Username Modal -->
+    <div class="modal" id="username-modal">
         <div class="modal-content">
             <h2>Enter Your Username</h2>
-            <form class="username-form" id="username-form">
-                <input type="text" class="username-input" id="username-input" placeholder="Your username" required>
-                <button type="submit" class="username-button">Join Chat</button>
+            <form id="username-form">
+                <div class="form-group">
+                    <label for="username-input">Username:</label>
+                    <input type="text" class="form-input" id="username-input" placeholder="Your username" required>
+                </div>
+                <button type="submit" class="form-button">Join Chat</button>
             </form>
         </div>
     </div>
@@ -311,6 +338,9 @@
         let username = '';
         let socket;
         
+        // Set the password here - CHANGE THIS TO YOUR DESIRED PASSWORD
+        const correctPassword = "hatchat123";
+        
         // DOM elements
         const chatMessages = document.getElementById('chat-messages');
         const chatForm = document.getElementById('chat-form');
@@ -319,11 +349,34 @@
         const usernameModal = document.getElementById('username-modal');
         const usernameForm = document.getElementById('username-form');
         const usernameInput = document.getElementById('username-input');
+        const passwordModal = document.getElementById('password-modal');
+        const passwordForm = document.getElementById('password-form');
+        const passwordInput = document.getElementById('password-input');
+        const passwordError = document.getElementById('password-error');
         const connectionStatus = document.getElementById('connection-status');
         
-        // Show username modal on page load
+        // Show password modal on page load
         window.addEventListener('DOMContentLoaded', () => {
-            usernameModal.style.display = 'flex';
+            passwordModal.style.display = 'flex';
+        });
+        
+        // Handle password submission
+        passwordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const enteredPassword = passwordInput.value.trim();
+            
+            if (enteredPassword === correctPassword) {
+                // Password correct, proceed to username
+                passwordModal.style.display = 'none';
+                usernameModal.style.display = 'flex';
+                passwordError.style.display = 'none';
+            } else {
+                // Password incorrect, show error
+                passwordError.style.display = 'block';
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
         });
         
         // Handle username submission
