@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +15,7 @@
     <title>hatchat - Chat</title>
     <style>
         body {
-            font-family: DejaVu Sans Mono, monospace;
+            font-family: Courier, monospace;
             margin: 0;
             padding: 0;
             display: flex;
@@ -526,6 +527,9 @@ usernameForm.addEventListener('submit', (e) => {
         initializeChat();
     }
 });
+
+let lastSender = null;
+let lastMessageDiv = null;
 
 let lastSender = null;
 let lastMessageDiv = null;
