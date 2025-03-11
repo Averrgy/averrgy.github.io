@@ -140,17 +140,33 @@
             border-bottom: none;
         }
         
-        /* Message group container */
-        .message-group {
-            margin-bottom: 1rem;
+        .message {
+            margin-bottom: 0.5rem;
+            padding: 0.3rem 0;
+            max-width: 100%;
+            word-wrap: break-word;
+            display: flex;
         }
         
-        /* Message sender header */
-        .message-sender-header {
+        .message-sender {
             font-weight: bold;
+            margin-right: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .message-separator {
+            margin: 0 0.5rem;
+        }
+        
+        .message-content {
+            flex: 1;
+        }
+        
+        .message-info {
+            font-size: 0.8rem;
+            color: #aaa;
             display: flex;
             align-items: center;
-            margin-bottom: 0.3rem;
         }
         
         .timestamp {
@@ -159,11 +175,11 @@
             margin-left: 0.5rem;
         }
         
-        /* Individual message in a group */
-        .message {
-            margin-bottom: 0.3rem;
-            padding-left: 1rem;
-            word-wrap: break-word;
+        .continued-message {
+            padding-left: 0.5rem;
+            margin-left: 0.5rem;
+            border-left: 2px solid #333;
+            margin-bottom: 0.5rem;
         }
         
         .system-message {
@@ -430,7 +446,7 @@
         let socket;
         let currentPage = 1;
         let isLoading = false;
-        let messageGroups = {}; // Track message groups by sender
+        let lastMessageSender = null; // Track the last message sender
         
         // Set the password here - CHANGE THIS TO YOUR DESIRED PASSWORD
         const correctPassword = "hatty";
@@ -451,7 +467,7 @@
         const loadMoreBtn = document.getElementById('load-more-btn');
         const loadingIndicator = document.getElementById('loading-indicator');
         
-        // Store user colors - now shared with server to make them universal
+        // Store user colors
         let userColors = {};
         
         // Show password modal on page load
@@ -490,10 +506,11 @@
             }
             
             username = enteredUsername;
+            userColors[username] = selectedColor; // Store color
             
             if (username) {
                 usernameModal.style.display = 'none';
-                initializeChat(selectedColor);
+                initializeChat();
             }
         });
         
@@ -503,12 +520,11 @@
             return date.toLocaleString();
         }
         
-        function initializeChat(userColor) {
-            // Connect to the Socket.IO server with the username and color
+        function initializeChat() {
+            // Connect to the Socket.IO server with the username
             socket = io('https://averrgy-github-io.onrender.com', {
                 query: {
-                    username,
-                    userColor // Send color with connection
+                    username
                 }
             });
             
@@ -517,11 +533,8 @@
                 connectionStatus.textContent = 'Connected';
                 connectionStatus.style.color = '#4CAF50';
                 
-                // Notify the server of a new user with their color
-                socket.emit('user_join', { 
-                    username,
-                    userColor
-                });
+                // Notify the server of a new user
+                socket.emit('user_join', { username });
                 
                 // Request message history
                 loadMessages(1);
@@ -533,15 +546,7 @@
             });
             
             socket.on('chat_message', (data) => {
-                addMessageToGroup(data.username, data.message, data.timestamp, data.color);
-            });
-            
-            socket.on('user_colors', (colors) => {
-                // Update colors from server (ensures everyone sees the same colors)
-                userColors = colors;
-                
-                // Update online users with new colors
-                updateOnlineUsers(Array.from(Object.keys(userColors)));
+                displayMessage(data.username, data.message, data.timestamp);
             });
             
             socket.on('chat_history', (data) => {
@@ -551,72 +556,118 @@
                 if (currentPage === 1) {
                     // Clear existing messages if this is the first page
                     chatMessages.innerHTML = '';
-                    messageGroups = {}; // Reset message groups
+                    lastMessageSender = null; // Reset last sender
                 }
                 
                 // Create a temporary container for messages
                 const fragment = document.createDocumentFragment();
+                const messagesArray = [];
                 
-                // Create groups for chronological ordering
-                const tempGroups = {};
-                
-                // First, group messages by sender and timestamp (for proper ordering)
-                data.messages.forEach((msg) => {
+                // Process messages
+                data.messages.forEach((msg, index) => {
                     if (msg.type === 'system') {
-                        // For system messages, create unique group
-                        const systemGroup = {
-                            timestamp: new Date(msg.timestamp).getTime(),
-                            element: createSystemMessageElement(msg.message, msg.timestamp)
-                        };
-                        
-                        // Add to temp groups
-                        tempGroups[`system_${Date.now()}_${Math.random()}`] = systemGroup;
+                        const messageDiv = createSystemMessageElement(msg.message, msg.timestamp);
+                        messagesArray.push(messageDiv);
+                        lastMessageSender = null; // System message resets the sender tracking
                     } else {
-                        // For normal messages, add to sender's group
-                        const msgTimestamp = new Date(msg.timestamp).getTime();
-                        const groupKey = `${msg.username}_${msgTimestamp}`;
+                        // For regular messages, check if we need to create a new message group
+                        let isContinuation = false;
                         
-                        if (!tempGroups[groupKey]) {
-                            tempGroups[groupKey] = {
-                                sender: msg.username,
-                                color: msg.color || userColors[msg.username] || '#FFFFFF',
-                                timestamp: msgTimestamp,
-                                messages: []
-                            };
+                        // Skip continuity check for first page since we're showing newest messages
+                        if (currentPage > 1 && index > 0) {
+                            const prevMsg = data.messages[index - 1];
+                            isContinuation = prevMsg.type !== 'system' && prevMsg.username === msg.username;
                         }
                         
-                        tempGroups[groupKey].messages.push({
-                            content: msg.message,
-                            timestamp: msg.timestamp
-                        });
+                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation);
+                        messagesArray.push(messageDiv);
                     }
                 });
                 
-                // Sort groups by timestamp (oldest first if loading older messages, newest first otherwise)
-                const sortedGroupKeys = Object.keys(tempGroups).sort((a, b) => {
-                    if (currentPage === 1) {
-                        return tempGroups[a].timestamp - tempGroups[b].timestamp; // Oldest first for first page
-                    } else {
-                        return tempGroups[a].timestamp - tempGroups[b].timestamp; // Oldest first for older pages
-                    }
-                });
-                
-                // Create and append message groups in order
-                sortedGroupKeys.forEach(key => {
-                    const group = tempGroups[key];
+                // If loading the first page (newest messages), reverse the order
+                if (currentPage === 1) {
+                    messagesArray.reverse();
                     
-                    if (group.element) {
-                        // System message
-                        fragment.appendChild(group.element);
-                    } else {
-                        // User message group
-                        const groupElement = createMessageGroupElement(
-                            group.sender,
-                            group.messages,
-                            group.color
-                        );
-                        fragment.appendChild(groupElement);
+                    // For first page (newest messages), we need to check continuations in reverse
+                    if (messagesArray.length > 0) {
+                        let currentSender = null;
+                        
+                        // Process from bottom to top (oldest to newest in the view)
+                        for (let i = 0; i < messagesArray.length; i++) {
+                            const messageDiv = messagesArray[i];
+                            
+                            // Skip system messages
+                            if (messageDiv.classList.contains('system-message')) {
+                                currentSender = null;
+                                continue;
+                            }
+                            
+                            // Get the sender of this message
+                            const senderEl = messageDiv.querySelector('.message-sender');
+                            if (!senderEl) continue;
+                            
+                            const sender = senderEl.getAttribute('data-sender');
+                            
+                            // If this is a continuation from the previous message
+                            if (currentSender === sender && i > 0) {
+                                messageDiv.classList.add('continued-message');
+                                // Hide the sender info
+                                const messageInfo = messageDiv.querySelector('.message-info');
+                                if (messageInfo) {
+                                    messageInfo.style.display = 'none';
+                                }
+                            }
+                            
+                            currentSender = sender;
+                        }
+                        
+                        // Set the last message sender for future messages
+                        if (messagesArray.length > 0) {
+                            const lastMessage = messagesArray[messagesArray.length - 1];
+                            if (!lastMessage.classList.contains('system-message')) {
+                                const senderEl = lastMessage.querySelector('.message-sender');
+                                if (senderEl) {
+                                    lastMessageSender = senderEl.getAttribute('data-sender');
+                                }
+                            }
+                        }
                     }
+                } else {
+                    // For older pages, process continuations normally (top to bottom)
+                    let currentSender = null;
+                    
+                    for (let i = 0; i < messagesArray.length; i++) {
+                        const messageDiv = messagesArray[i];
+                        
+                        // Skip system messages
+                        if (messageDiv.classList.contains('system-message')) {
+                            currentSender = null;
+                            continue;
+                        }
+                        
+                        // Get the sender of this message
+                        const senderEl = messageDiv.querySelector('.message-sender');
+                        if (!senderEl) continue;
+                        
+                        const sender = senderEl.getAttribute('data-sender');
+                        
+                        // If this is a continuation from the previous message
+                        if (currentSender === sender && i > 0) {
+                            messageDiv.classList.add('continued-message');
+                            // Hide the sender info
+                            const messageInfo = messageDiv.querySelector('.message-info');
+                            if (messageInfo) {
+                                messageInfo.style.display = 'none';
+                            }
+                        }
+                        
+                        currentSender = sender;
+                    }
+                }
+                
+                // Append all messages to the fragment
+                messagesArray.forEach(element => {
+                    fragment.appendChild(element);
                 });
                 
                 // Add all messages to the chat
@@ -637,22 +688,10 @@
                 if (currentPage === 1) {
                     chatMessages.scrollTop = chatMessages.scrollHeight;
                 }
-                
-                // Also update user colors
-                if (data.userColors) {
-                    userColors = data.userColors;
-                    updateOnlineUsers(data.users || []);
-                }
             });
             
             socket.on('user_join', (data) => {
                 displaySystemMessage(`${data.username} has joined the chat`);
-                
-                // Update user colors
-                if (data.userColors) {
-                    userColors = data.userColors;
-                }
-                
                 updateOnlineUsers(data.users);
             });
             
@@ -662,9 +701,6 @@
             });
             
             socket.on('update_users', (data) => {
-                if (data.userColors) {
-                    userColors = data.userColors;
-                }
                 updateOnlineUsers(data.users);
             });
             
@@ -702,69 +738,67 @@
             }
         });
         
-        // Create a message group element
-        function createMessageGroupElement(sender, messages, color) {
-            const groupDiv = document.createElement('div');
-            groupDiv.className = 'message-group';
-            groupDiv.setAttribute('data-sender', sender);
+        // Create message element with username side by side with message
+        function createMessageElement(sender, message, timestamp, isContinuation = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
             
-            // Create header with username and timestamp
-            const headerDiv = document.createElement('div');
-            headerDiv.className = 'message-sender-header';
-            
-            // Apply user color to username
-            headerDiv.style.color = color || '#FFFFFF';
-            headerDiv.textContent = sender;
-            
-            // Add timestamp for the first message
-            if (messages && messages.length > 0) {
-                const timestampSpan = document.createElement('span');
-                timestampSpan.className = 'timestamp';
-                timestampSpan.textContent = formatTimestamp(messages[0].timestamp);
-                headerDiv.appendChild(timestampSpan);
+            if (!isContinuation) {
+                // Create message info section (username + timestamp)
+                const messageInfo = document.createElement('div');
+                messageInfo.className = 'message-info';
+                
+                // Create sender element
+                const senderElement = document.createElement('span');
+                senderElement.className = 'message-sender';
+                senderElement.setAttribute('data-sender', sender);
+                senderElement.textContent = sender;
+                
+                // Apply username color
+                if (userColors[sender]) {
+                    senderElement.style.color = userColors[sender];
+                }
+                
+                // Add separator
+                const separatorElement = document.createElement('span');
+                separatorElement.className = 'message-separator';
+                separatorElement.textContent = '~';
+                
+                // Add timestamp
+                const timestampElement = document.createElement('span');
+                timestampElement.className = 'timestamp';
+                timestampElement.textContent = formatTimestamp(timestamp);
+                
+                // Assemble message info
+                messageInfo.appendChild(senderElement);
+                messageInfo.appendChild(separatorElement);
+                messageDiv.appendChild(messageInfo);
+            } else {
+                messageDiv.className = 'message continued-message';
             }
             
-            groupDiv.appendChild(headerDiv);
+            // Create message content
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = message;
             
-            // Add each message
-            messages.forEach(msg => {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message';
-                messageDiv.textContent = msg.content;
-                
-                // Apply color to the message content
-                messageDiv.style.color = color || '#FFFFFF';
-                
-                groupDiv.appendChild(messageDiv);
-            });
+            // Apply message color for the actual content
+            if (userColors[sender]) {
+                messageContent.style.color = userColors[sender];
+            }
             
-            return groupDiv;
+            messageDiv.appendChild(messageContent);
+            
+            return messageDiv;
         }
         
-        // Add a message to an existing group or create a new one
-        function addMessageToGroup(sender, message, timestamp, color) {
-            // Find existing group for this sender
-            let groupElement = Array.from(chatMessages.querySelectorAll('.message-group')).find(
-                el => el.getAttribute('data-sender') === sender
-            );
+        // Display message in the chat
+        function displayMessage(sender, message, timestamp) {
+            const isContinuation = (sender === lastMessageSender);
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation);
             
-            // If no group exists or the last message is not from this sender, create a new group
-            if (!groupElement) {
-                groupElement = createMessageGroupElement(sender, [{
-                    content: message,
-                    timestamp: timestamp
-                }], color || userColors[sender] || '#FFFFFF');
-                
-                chatMessages.appendChild(groupElement);
-            } else {
-                // Add message to existing group
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'message';
-                messageDiv.textContent = message;
-                messageDiv.style.color = color || userColors[sender] || '#FFFFFF';
-                
-                groupElement.appendChild(messageDiv);
-            }
+            chatMessages.appendChild(messageDiv);
+            lastMessageSender = sender;
             
             // Always scroll to bottom for new messages
             chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -788,6 +822,7 @@
         function displaySystemMessage(message, timestamp) {
             const messageDiv = createSystemMessageElement(message, timestamp);
             chatMessages.appendChild(messageDiv);
+            lastMessageSender = null; // Reset last sender after system message
             
             // Always scroll to bottom for system messages
             chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -807,7 +842,7 @@
                 const userName = document.createElement('span');
                 userName.textContent = user === username ? `${user} (You)` : user;
                 
-                // Apply username color from global colors
+                // Apply username color
                 if (userColors[user]) {
                     userName.style.color = userColors[user];
                 }
