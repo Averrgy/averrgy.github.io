@@ -79,12 +79,31 @@
         .main-content {
             flex: 1;
             display: flex;
-            flex-direction: column;
             padding: 0 2rem 2rem;
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
             box-sizing: border-box;
+        }
+        
+        .user-list {
+            width: 200px;
+            min-width: 200px;
+            margin-right: 1.5rem;
+        }
+        
+        .user-list h3 {
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+        }
+        
+        .online-users {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 70vh;
+            overflow-y: auto;
         }
         
         .chat-container {
@@ -122,6 +141,8 @@
             background-color: #1a1a1a;
             border: 1px solid #333;
             border-bottom: none;
+            height: 100%;
+            max-height: calc(70vh - 110px); /* Fixed height to prevent stretching */
         }
         
         .message {
@@ -197,25 +218,6 @@
         
         .chat-button:hover {
             background-color: #555;
-        }
-        
-        .user-list {
-            width: 100%;
-            margin-top: 1.5rem;
-        }
-        
-        .user-list h3 {
-            margin-top: 0;
-            margin-bottom: 0.5rem;
-        }
-        
-        .online-users {
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 1rem;
-            max-height: 150px;
-            overflow-y: auto;
         }
         
         .user-item {
@@ -336,11 +338,26 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .main-content {
+                flex-direction: column;
                 padding: 0 1rem 1rem;
             }
             
+            .user-list {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 1.5rem;
+            }
+            
+            .online-users {
+                max-height: 150px;
+            }
+            
             .chat-container {
-                height: 60vh;
+                height: 50vh;
+            }
+            
+            .chat-messages {
+                max-height: calc(50vh - 110px);
             }
             
             .load-more-container {
@@ -368,6 +385,13 @@
     </div>
     
     <div class="main-content">
+        <div class="user-list">
+            <h3>fellow hattingtons</h3>
+            <div class="online-users" id="online-users">
+                <!-- Online users will be added here -->
+            </div>
+        </div>
+        
         <div class="chat-container">
             <div class="chat-header">
                 <h2>Live Chat</h2>
@@ -381,13 +405,6 @@
                 <input type="text" class="chat-input" id="chat-input" placeholder="Type your message..." required>
                 <button type="submit" class="chat-button">Send</button>
             </form>
-        </div>
-        
-        <div class="user-list">
-            <h3>fellow hattingtons</h3>
-            <div class="online-users" id="online-users">
-                <!-- Online users will be added here -->
-            </div>
         </div>
     </div>
     
@@ -538,14 +555,37 @@
                     chatMessages.innerHTML = '';
                 }
                 
-                // Display messages in chronological order (oldest first)
+                // Create a temporary container for messages
+                const fragment = document.createDocumentFragment();
+                const messagesArray = [];
+                
+                // Collect all messages
                 data.messages.forEach(msg => {
                     if (msg.type === 'system') {
-                        displaySystemMessage(msg.message, msg.timestamp);
+                        const messageDiv = createSystemMessageElement(msg.message, msg.timestamp);
+                        messagesArray.push(messageDiv);
                     } else {
-                        displayMessage(msg.username, msg.message, msg.timestamp, msg.username === username);
+                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, msg.username === username);
+                        messagesArray.push(messageDiv);
                     }
                 });
+                
+                // If loading the first page (newest messages), reverse the order
+                if (currentPage === 1) {
+                    messagesArray.reverse();
+                }
+                
+                // Append all messages to the fragment
+                messagesArray.forEach(element => {
+                    fragment.appendChild(element);
+                });
+                
+                // Add all messages to the chat
+                if (currentPage === 1) {
+                    chatMessages.appendChild(fragment);
+                } else {
+                    chatMessages.insertBefore(fragment, chatMessages.firstChild);
+                }
                 
                 // If no more messages to load, disable the load more button
                 if (data.messages.length < 20) {  // Assuming 20 is the page size on the server
@@ -608,8 +648,8 @@
             }
         });
         
-        // Display message in the chat
-        function displayMessage(sender, message, timestamp, isMine) {
+        // Create message element but don't add to DOM yet
+        function createMessageElement(sender, message, timestamp, isMine) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isMine ? 'my-message' : 'other-message'}`;
             
@@ -633,6 +673,12 @@
             messageDiv.appendChild(messageInfo);
             messageDiv.appendChild(messageContent);
             
+            return messageDiv;
+        }
+        
+        // Display message in the chat
+        function displayMessage(sender, message, timestamp, isMine) {
+            const messageDiv = createMessageElement(sender, message, timestamp, isMine);
             chatMessages.appendChild(messageDiv);
             
             // Only scroll to bottom if we're already at the bottom
@@ -642,8 +688,8 @@
             }
         }
         
-        // Display system message in the chat
-        function displaySystemMessage(message, timestamp) {
+        // Create system message element but don't add to DOM yet
+        function createSystemMessageElement(message, timestamp) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'system-message';
             
@@ -653,6 +699,12 @@
                 messageDiv.textContent = message;
             }
             
+            return messageDiv;
+        }
+        
+        // Display system message in the chat
+        function displaySystemMessage(message, timestamp) {
+            const messageDiv = createSystemMessageElement(message, timestamp);
             chatMessages.appendChild(messageDiv);
             
             // Only scroll to bottom if we're already at the bottom
