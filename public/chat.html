@@ -146,21 +146,24 @@
             max-width: 100%;
             word-wrap: break-word;
             display: flex;
+            --sender-width: 0; /* Initialize CSS variable */
         }
-        
+
         .message-sender {
             font-weight: bold;
             margin-right: 0.5rem;
             white-space: nowrap;
+            /* Calculate and set the sender width for later use */
+            --sender-width: calc(100% + 0.5rem);
         }
-        
+
         .message-separator {
             margin: 0 0.5rem;
         }
-        
+
         .message-content {
             flex: 1;
-            word-break: break-word; /* Ensures long words don't overflow */
+            word-break: break-word;
         }
         
         .message-info {
@@ -176,11 +179,11 @@
             margin-left: 0.5rem;
         }
         
-        .continued-message {
-            padding-left: 5.5rem;  /* This value should match approximately where the content starts */
+        continued-message {
+            padding-left: calc(var(--sender-width)); /* Use the calculated width */
             border-left: 3px solid #333;
             margin-bottom: 0.5rem;
-            margin-top: 0.5rem;    /* Reduced spacing between consecutive messages */
+            margin-top: 0.5rem;
         }
         
         .system-message {
