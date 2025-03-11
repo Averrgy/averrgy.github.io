@@ -506,22 +506,42 @@
         });
         
         // Handle username submission
-        usernameForm.addEventListener('submit', (e) => {
+        let userColors = {}; // Store user colors
+
+usernameForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const enteredUsername = usernameInput.value.trim();
+    const selectedColor = document.getElementById('color-input').value; // Get color
 
-    if (enteredUsername.length !== 3) {
-        alert("Username must be exactly 3 characters long.");
-        return; // Stop form submission
+    if (enteredUsername.length > 3) {
+        alert("Username must be 3 characters or less.");
+        return;
     }
 
-    username = enteredUsername; // Set the global username variable
+    username = enteredUsername;
+    userColors[username] = selectedColor; // Store color
 
     if (username) {
         usernameModal.style.display = 'none';
         initializeChat();
     }
 });
+
+function displayMessage(sender, message, timestamp, isMine) {
+    const messageDiv = createMessageElement(sender, message, timestamp, isMine);
+    const messageContent = messageDiv.querySelector('.message-content'); // Get message content
+
+    if (messageContent && userColors[sender]) {
+        messageContent.style.color = userColors[sender]; // Apply color
+    }
+
+    chatMessages.appendChild(messageDiv);
+
+    const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
+    if (isScrolledToBottom || isMine) {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+}
         
         // Format timestamp
         function formatTimestamp(timestamp) {
@@ -662,31 +682,31 @@
         
         // Create message element but don't add to DOM yet
         function createMessageElement(sender, message, timestamp, isMine) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isMine ? 'my-message' : 'other-message'}`;
-            
-            const messageInfo = document.createElement('div');
-            messageInfo.className = 'message-info';
-            
-            const senderSpan = document.createElement('span');
-            senderSpan.textContent = isMine ? 'You' : sender;
-            
-            const timestampSpan = document.createElement('span');
-            timestampSpan.className = 'timestamp';
-            timestampSpan.textContent = formatTimestamp(timestamp);
-            
-            messageInfo.appendChild(senderSpan);
-            messageInfo.appendChild(timestampSpan);
-            
-            const messageContent = document.createElement('p');
-            messageContent.className = 'message-content';
-            messageContent.textContent = message;
-            
-            messageDiv.appendChild(messageInfo);
-            messageDiv.appendChild(messageContent);
-            
-            return messageDiv;
-        }
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isMine ? 'my-message' : 'other-message'}`;
+
+    const messageInfo = document.createElement('div');
+    messageInfo.className = 'message-info';
+
+    const senderSpan = document.createElement('span');
+    senderSpan.textContent = isMine ? 'You' : sender;
+
+    const timestampSpan = document.createElement('span');
+    timestampSpan.className = 'timestamp';
+    timestampSpan.textContent = formatTimestamp(timestamp);
+
+    messageInfo.appendChild(senderSpan);
+    messageInfo.appendChild(timestampSpan);
+
+    const messageContent = document.createElement('p');
+    messageContent.className = 'message-content';
+    messageContent.textContent = message;
+
+    messageDiv.appendChild(messageInfo);
+    messageDiv.appendChild(messageContent);
+
+    return messageDiv;
+}
         
         // Display message in the chat
         function displayMessage(sender, message, timestamp, isMine) {
