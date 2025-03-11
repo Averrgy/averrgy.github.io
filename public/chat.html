@@ -152,7 +152,6 @@
             font-weight: bold;
             margin-right: 0.5rem;
             white-space: nowrap;
-            font-size: 1.1rem; /* Increased font size */
         }
         
         .message-separator {
@@ -161,7 +160,6 @@
         
         .message-content {
             flex: 1;
-            font-size: 1.1rem; /* Increased font size */
         }
         
         .message-info {
@@ -178,10 +176,10 @@
         }
         
         .continued-message {
-            padding-left: 0;
-            margin-left: 1.5rem; /* Align with the first message content */
+            padding-left: 0.5rem;
+            margin-left: 0.5rem;
+            border-left: 2px solid #333;
             margin-bottom: 0.5rem;
-            border-left: none; /* Remove the left border */
         }
         
         .system-message {
@@ -526,25 +524,20 @@
             // Connect to the Socket.IO server with the username
             socket = io('https://averrgy-github-io.onrender.com', {
                 query: {
-                    username,
-                    color: document.getElementById('color-input').value
+                    username
                 }
-            });
-            
-            // Update connection status
-            socket.on('connect', () => {
-                connectionStatus.textContent = 'Connected';
-                connectionStatus.style.color = '#4CAF50';
-                loadMessages(1);
             });
             
             // Socket events
-            socket.on('chat_message', (data) => {
-                // Store the color if received
-                if (data.color && !userColors[data.username]) {
-                    userColors[data.username] = data.color;
-                }
-                displayMessage(data.username, data.message, data.timestamp, data.color);
+            socket.on('connect', () => {
+                connectionStatus.textContent = 'Connected';
+                connectionStatus.style.color = '#4CAF50';
+                
+                // Notify the server of a new user
+                socket.emit('user_join', { username });
+                
+                // Request message history
+                loadMessages(1);
             });
             
             socket.on('disconnect', () => {
@@ -552,14 +545,13 @@
                 connectionStatus.style.color = '#ff6b6b';
             });
             
+            socket.on('chat_message', (data) => {
+                displayMessage(data.username, data.message, data.timestamp);
+            });
+            
             socket.on('chat_history', (data) => {
                 loadingIndicator.style.display = 'none';
                 isLoading = false;
-                
-                // Store colors received from server
-                if (data.colors) {
-                    Object.assign(userColors, data.colors);
-                }
                 
                 if (currentPage === 1) {
                     // Clear existing messages if this is the first page
@@ -587,7 +579,7 @@
                             isContinuation = prevMsg.type !== 'system' && prevMsg.username === msg.username;
                         }
                         
-                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation, msg.color || userColors[msg.username]);
+                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation);
                         messagesArray.push(messageDiv);
                     }
                 });
@@ -700,7 +692,7 @@
             
             socket.on('user_join', (data) => {
                 displaySystemMessage(`${data.username} has joined the chat`);
-                updateOnlineUsers(data.users, data.colors);
+                updateOnlineUsers(data.users);
             });
             
             socket.on('user_leave', (data) => {
@@ -709,7 +701,7 @@
             });
             
             socket.on('update_users', (data) => {
-                updateOnlineUsers(data.users, data.colors);
+                updateOnlineUsers(data.users);
             });
             
             // Load more messages button
@@ -737,11 +729,8 @@
             const message = chatInput.value.trim();
             
             if (message && socket) {
-                // Send message to server with color
-                socket.emit('chat_message', { 
-                    message,
-                    color: userColors[username] || '#FFFFFF'
-                });
+                // Send message to server
+                socket.emit('chat_message', { message });
                 
                 // Clear input
                 chatInput.value = '';
@@ -750,7 +739,7 @@
         });
         
         // Create message element with username side by side with message
-        function createMessageElement(sender, message, timestamp, isContinuation = false, color) {
+        function createMessageElement(sender, message, timestamp, isContinuation = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
             
@@ -766,8 +755,8 @@
                 senderElement.textContent = sender;
                 
                 // Apply username color
-                if (color) {
-                    senderElement.style.color = color;
+                if (userColors[sender]) {
+                    senderElement.style.color = userColors[sender];
                 }
                 
                 // Add separator
@@ -783,7 +772,6 @@
                 // Assemble message info
                 messageInfo.appendChild(senderElement);
                 messageInfo.appendChild(separatorElement);
-                messageInfo.appendChild(timestampElement);
                 messageDiv.appendChild(messageInfo);
             } else {
                 messageDiv.className = 'message continued-message';
@@ -795,8 +783,8 @@
             messageContent.textContent = message;
             
             // Apply message color for the actual content
-            if (color) {
-                messageContent.style.color = color;
+            if (userColors[sender]) {
+                messageContent.style.color = userColors[sender];
             }
             
             messageDiv.appendChild(messageContent);
@@ -805,15 +793,9 @@
         }
         
         // Display message in the chat
-        function displayMessage(sender, message, timestamp, color) {
-            // Use the color passed from the server if available, otherwise use stored colors
-            const messageColor = color || userColors[sender] || '#FFFFFF';
-            if (!userColors[sender]) {
-                userColors[sender] = messageColor;
-            }
-            
+        function displayMessage(sender, message, timestamp) {
             const isContinuation = (sender === lastMessageSender);
-            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, messageColor);
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation);
             
             chatMessages.appendChild(messageDiv);
             lastMessageSender = sender;
@@ -847,7 +829,7 @@
         }
         
         // Update online users list
-        function updateOnlineUsers(users, colors = {}) {
+        function updateOnlineUsers(users) {
             onlineUsers.innerHTML = '';
             
             users.forEach(user => {
@@ -860,11 +842,8 @@
                 const userName = document.createElement('span');
                 userName.textContent = user === username ? `${user} (You)` : user;
                 
-                // Apply username color - use colors from server if available
-                if (colors && colors[user]) {
-                    userColors[user] = colors[user]; // Store color from server
-                    userName.style.color = colors[user];
-                } else if (userColors[user]) {
+                // Apply username color
+                if (userColors[user]) {
                     userName.style.color = userColors[user];
                 }
                 
