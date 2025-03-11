@@ -160,6 +160,7 @@
         
         .message-content {
             flex: 1;
+            word-break: break-word; /* Ensures long words don't overflow */
         }
         
         .message-info {
@@ -176,10 +177,10 @@
         }
         
         .continued-message {
-            padding-left: 0.5rem;
-            margin-left: 0.5rem;
+            padding-left: 1.5rem;  /* This value should match approximately where the content starts */
             border-left: 2px solid #333;
             margin-bottom: 0.5rem;
+            margin-top: 0.1rem;    /* Reduced spacing between consecutive messages */
         }
         
         .system-message {
