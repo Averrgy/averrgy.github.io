@@ -153,17 +153,18 @@
             font-weight: bold;
             margin-right: 0.5rem;
             white-space: nowrap;
-            --sender-offset: calc(100% + 0.5rem);
+            /* Remove width contribution */
         }
 
         .message-separator {
             margin: 0 0.5rem;
-            --sender-offset: calc(var(--sender-offset) + 1rem);
+            /* Remove width contribution */
         }
 
         .message-content {
             flex: 1;
             word-break: break-word;
+            --sender-offset: 1rem; /* Only include the space */
         }
         
         .message-info {
