@@ -21,11 +21,13 @@ const io = socketIo(server, {
     }
 });
 
-// Store online users
+// Store online users and their colors
 const onlineUsers = new Set();
+const userColors = {}; // Store user colors
 
 // Message storage setup
 const MESSAGES_FILE = path.join(__dirname, 'chat_messages.json');
+const USER_COLORS_FILE = path.join(__dirname, 'user_colors.json');
 
 // Initialize messages from file or create new file
 let chatMessages = [];
@@ -40,6 +42,18 @@ try {
     console.error('Error loading chat messages:', error);
 }
 
+// Initialize user colors from file or create new file
+try {
+    if (fs.existsSync(USER_COLORS_FILE)) {
+        const data = fs.readFileSync(USER_COLORS_FILE, 'utf8');
+        Object.assign(userColors, JSON.parse(data));
+    } else {
+        fs.writeFileSync(USER_COLORS_FILE, JSON.stringify(userColors), 'utf8');
+    }
+} catch (error) {
+    console.error('Error loading user colors:', error);
+}
+
 // Save messages to file
 function saveMessages() {
     try {
@@ -49,14 +63,30 @@ function saveMessages() {
     }
 }
 
+// Save user colors to file
+function saveUserColors() {
+    try {
+        fs.writeFileSync(USER_COLORS_FILE, JSON.stringify(userColors), 'utf8');
+    } catch (error) {
+        console.error('Error saving user colors:', error);
+    }
+}
+
 // Socket.IO connection handler
 io.on('connection', (socket) => {
     // Get username from query params
     const username = socket.handshake.query.username;
+    const userColor = socket.handshake.query.color;
     
     if (!username) {
         socket.disconnect();
         return;
+    }
+    
+    // Store user color if provided
+    if (userColor) {
+        userColors[username] = userColor;
+        saveUserColors();
     }
     
     // Add user to online users
@@ -70,7 +100,8 @@ io.on('connection', (socket) => {
         // Broadcast user join to all clients
         io.emit('user_join', {
             username: data.username,
-            users: Array.from(onlineUsers)
+            users: Array.from(onlineUsers),
+            userColors: userColors // Send all user colors
         });
         
         // Add system message to chat history
@@ -90,7 +121,8 @@ io.on('connection', (socket) => {
             type: 'message',
             username: username,
             message: data.message,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            color: userColors[username] // Include the user's color with the message
         };
         
         // Add message to chat history
@@ -115,8 +147,22 @@ io.on('connection', (socket) => {
         socket.emit('chat_history', {
             messages,
             page,
-            totalMessages: chatMessages.length
+            totalMessages: chatMessages.length,
+            userColors: userColors // Send all user colors
         });
+    });
+    
+    // Handle user color update
+    socket.on('update_color', (data) => {
+        if (data.color) {
+            userColors[username] = data.color;
+            saveUserColors();
+            
+            // Broadcast the updated colors to all clients
+            io.emit('update_colors', {
+                userColors: userColors
+            });
+        }
     });
     
     // Handle disconnect
@@ -140,7 +186,8 @@ io.on('connection', (socket) => {
         // Broadcast user leave to all clients
         io.emit('user_leave', {
             username: username,
-            users: Array.from(onlineUsers)
+            users: Array.from(onlineUsers),
+            userColors: userColors // Send updated user colors
         });
     });
 });
