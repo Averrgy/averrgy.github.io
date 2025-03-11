@@ -60,7 +60,7 @@
         }
         
         .load-more-container {
-            padding: 0.5rem 2rem;
+            padding: 0.5rem rem;
             background-color: #1e1e1e;
             border-bottom: 1px solid #333;
         }
@@ -507,8 +507,8 @@
     e.preventDefault();
     const enteredUsername = usernameInput.value.trim();
 
-    if (enteredUsername.length !== 2) {
-        alert("Username must be exactly 2 characters long.");
+    if (enteredUsername.length !== 3) {
+        alert("Username must be exactly 3 characters long.");
         return; // Stop form submission
     }
 
