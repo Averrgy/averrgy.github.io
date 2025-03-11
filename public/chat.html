@@ -527,15 +527,33 @@ usernameForm.addEventListener('submit', (e) => {
     }
 });
 
+let lastSender = null;
+let lastMessageDiv = null;
+
 function displayMessage(sender, message, timestamp, isMine) {
-    const messageDiv = createMessageElement(sender, message, timestamp, isMine);
-    const messageContent = messageDiv.querySelector('.message-content'); // Get message content
+    if (lastSender === sender && lastMessageDiv) {
+        // Same sender, append message
+        const messageContent = lastMessageDiv.querySelector('.message-content');
+        if (messageContent) {
+            messageContent.textContent += "\n" + message; // Append with a newline
+        }
+        const timestampSpan = lastMessageDiv.querySelector('.timestamp');
+        if (timestampSpan) {
+            timestampSpan.textContent = formatTimestamp(timestamp);
+        }
+    } else {
+        // New sender, create new message
+        const messageDiv = createMessageElement(sender, message, timestamp, isMine);
+        const messageContent = messageDiv.querySelector('.message-content');
 
-    if (messageContent && userColors[sender]) {
-        messageContent.style.color = userColors[sender]; // Apply color
+        if (messageContent && userColors[sender]) {
+            messageContent.style.color = userColors[sender];
+        }
+
+        chatMessages.appendChild(messageDiv);
+        lastSender = sender;
+        lastMessageDiv = messageDiv;
     }
-
-    chatMessages.appendChild(messageDiv);
 
     const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
     if (isScrolledToBottom || isMine) {
@@ -688,14 +706,10 @@ function displayMessage(sender, message, timestamp, isMine) {
     const messageInfo = document.createElement('div');
     messageInfo.className = 'message-info';
 
-    const senderSpan = document.createElement('span');
-    senderSpan.textContent = sender; // display the actual username
-
     const timestampSpan = document.createElement('span');
     timestampSpan.className = 'timestamp';
     timestampSpan.textContent = formatTimestamp(timestamp);
 
-    messageInfo.appendChild(senderSpan);
     messageInfo.appendChild(timestampSpan);
 
     const messageContent = document.createElement('p');
