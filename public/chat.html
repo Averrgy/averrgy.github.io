@@ -147,7 +147,6 @@
             word-wrap: break-word;
             display: flex;
             --sender-offset: 0;
-            margin-left: 1rem; /* Add margin-left */
         }
 
         .message-sender {
@@ -159,7 +158,7 @@
 
         .message-separator {
             margin: 0 0.5rem;
-            --sender-offset: calc(var(--sender-offset) + 1rem); /* Add separator width + margins */
+            --sender-offset: calc(var(--sender-offset) + 1rem);
         }
 
         .message-content {
@@ -181,7 +180,7 @@
         }
         
         .continued-message {
-            margin-left: var(--sender-offset); /* Use margin-left instead of padding-left */
+            margin-left: var(--sender-offset); /* Use the offset */
             border-left: 3px solid #333;
             margin-bottom: 0.5rem;
             margin-top: 0.5rem;
