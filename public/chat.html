@@ -542,8 +542,8 @@ function displayMessage(sender, message, timestamp, isMine) {
             timestampSpan.textContent = formatTimestamp(timestamp);
         }
     } else {
-        // New sender, create new message
-        const messageDiv = createMessageElement(sender, message, timestamp, isMine);
+        // New sender, create new message with username
+        const messageDiv = createMessageElement(sender, message, timestamp, isMine, true); // true = show username
         const messageContent = messageDiv.querySelector('.message-content');
 
         if (messageContent && userColors[sender]) {
@@ -559,6 +559,35 @@ function displayMessage(sender, message, timestamp, isMine) {
     if (isScrolledToBottom || isMine) {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+}
+
+function createMessageElement(sender, message, timestamp, isMine, showUsername) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isMine ? 'my-message' : 'other-message'}`;
+
+    const messageInfo = document.createElement('div');
+    messageInfo.className = 'message-info';
+
+    if (showUsername) {
+        const senderSpan = document.createElement('span');
+        senderSpan.textContent = sender;
+        messageInfo.appendChild(senderSpan);
+    }
+
+    const timestampSpan = document.createElement('span');
+    timestampSpan.className = 'timestamp';
+    timestampSpan.textContent = formatTimestamp(timestamp);
+
+    messageInfo.appendChild(timestampSpan);
+
+    const messageContent = document.createElement('p');
+    messageContent.className = 'message-content';
+    messageContent.textContent = message;
+
+    messageDiv.appendChild(messageInfo);
+    messageDiv.appendChild(messageContent);
+
+    return messageDiv;
 }
         
         // Format timestamp
