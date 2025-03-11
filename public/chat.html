@@ -550,43 +550,47 @@
             });
             
             socket.on('chat_history', (data) => {
-                loadingIndicator.style.display = 'none';
-                isLoading = false;
-                
-                if (currentPage === 1) {
-                    // Clear existing messages if this is the first page
-                    chatMessages.innerHTML = '';
-                    lastMessageSender = null; // Reset last sender
-                    // Store colors received from server
-            if (data.colors) {
-                Object.assign(userColors, data.colors);
+    loadingIndicator.style.display = 'none';
+    isLoading = false;
+    
+    // Store colors received from server
+    if (data.colors) {
+        Object.assign(userColors, data.colors);
+    }
+    
+    if (currentPage === 1) {
+        // Clear existing messages if this is the first page
+        chatMessages.innerHTML = '';
+        lastMessageSender = null; // Reset last sender
+    }
+    
+    // Create a temporary container for messages
+    const fragment = document.createDocumentFragment();
+    const messagesArray = [];
+    
+    // Process messages
+    data.messages.forEach((msg, index) => {
+        if (msg.type === 'system') {
+            const messageDiv = createSystemMessageElement(msg.message, msg.timestamp);
+            messagesArray.push(messageDiv);
+            lastMessageSender = null; // System message resets the sender tracking
+        } else {
+            // For regular messages, check if we need to create a new message group
+            let isContinuation = false;
+            
+            // Skip continuity check for first page since we're showing newest messages
+            if (currentPage > 1 && index > 0) {
+                const prevMsg = data.messages[index - 1];
+                isContinuation = prevMsg.type !== 'system' && prevMsg.username === msg.username;
             }
-                
-                
-                // Create a temporary container for messages
-                const fragment = document.createDocumentFragment();
-                const messagesArray = [];
-                
-                // Process messages
-                data.messages.forEach((msg, index) => {
-                    if (msg.type === 'system') {
-                        const messageDiv = createSystemMessageElement(msg.message, msg.timestamp);
-                        messagesArray.push(messageDiv);
-                        lastMessageSender = null; // System message resets the sender tracking
-                    } else {
-                        // For regular messages, check if we need to create a new message group
-                        let isContinuation = false;
-                        
-                        // Skip continuity check for first page since we're showing newest messages
-                        if (currentPage > 1 && index > 0) {
-                            const prevMsg = data.messages[index - 1];
-                            isContinuation = prevMsg.type !== 'system' && prevMsg.username === msg.username;
-                        }
-                        
-                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation);
-                        messagesArray.push(messageDiv);
-                    }
-                });
+            
+            const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation, msg.color || userColors[msg.username]);
+            messagesArray.push(messageDiv);
+        }
+    });
+    
+    // Rest of your processing code...
+});
                 
                 // If loading the first page (newest messages), reverse the order
                 if (currentPage === 1) {
