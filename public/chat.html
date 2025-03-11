@@ -504,14 +504,21 @@
         
         // Handle username submission
         usernameForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            username = usernameInput.value.trim();
-            
-            if (username) {
-                usernameModal.style.display = 'none';
-                initializeChat();
-            }
-        });
+    e.preventDefault();
+    const enteredUsername = usernameInput.value.trim();
+
+    if (enteredUsername.length !== 2) {
+        alert("Username must be exactly 2 characters long.");
+        return; // Stop form submission
+    }
+
+    username = enteredUsername; // Set the global username variable
+
+    if (username) {
+        usernameModal.style.display = 'none';
+        initializeChat();
+    }
+});
         
         // Format timestamp
         function formatTimestamp(timestamp) {
