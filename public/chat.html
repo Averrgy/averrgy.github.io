@@ -141,26 +141,28 @@
         }
         
         .message {
-            margin-bottom: 0.5rem;
-            padding: 0.3rem 0;
-            max-width: 100%;
-            word-wrap: break-word;
-            display: flex;
-        }
+    margin-bottom: 0.5rem;
+    padding: 0.3rem 0;
+    max-width: 100%;
+    word-wrap: break-word;
+    display: flex;
+}
         
         .message-sender {
-            font-weight: bold;
-            margin-right: 0.5rem;
-            white-space: nowrap;
-        }
+    font-weight: bold;
+    margin-right: 0.5rem;
+    white-space: nowrap;
+    font-size: 1.1rem; /* Increased font size */
+}
         
         .message-separator {
             margin: 0 0.5rem;
         }
         
         .message-content {
-            flex: 1;
-        }
+    flex: 1;
+    font-size: 1.1rem; /* Increased font size */
+}
         
         .message-info {
             font-size: 0.8rem;
@@ -176,11 +178,11 @@
         }
         
         .continued-message {
-            padding-left: 0.5rem;
-            margin-left: 0.5rem;
-            border-left: 2px solid #333;
-            margin-bottom: 0.5rem;
-        }
+    padding-left: 0;
+    margin-left: 1.5rem; /* Align with the first message content */
+    margin-bottom: 0.5rem;
+    border-left: none; /* Remove the left border */
+}
         
         .system-message {
             text-align: center;
@@ -523,22 +525,20 @@
         function initializeChat() {
             // Connect to the Socket.IO server with the username
             socket = io('https://averrgy-github-io.onrender.com', {
-                query: {
-                    username
-                }
-            });
+    query: {
+        username,
+        color: document.getElementById('color-input').value // Add this line
+    }
+});
             
             // Socket events
-            socket.on('connect', () => {
-                connectionStatus.textContent = 'Connected';
-                connectionStatus.style.color = '#4CAF50';
-                
-                // Notify the server of a new user
-                socket.emit('user_join', { username });
-                
-                // Request message history
-                loadMessages(1);
-            });
+            socket.on('chat_message', (data) => {
+    // Store the color if received
+    if (data.color && !userColors[data.username]) {
+        userColors[data.username] = data.color;
+    }
+    displayMessage(data.username, data.message, data.timestamp, data.color);
+});
             
             socket.on('disconnect', () => {
                 connectionStatus.textContent = 'Disconnected';
@@ -557,7 +557,11 @@
                     // Clear existing messages if this is the first page
                     chatMessages.innerHTML = '';
                     lastMessageSender = null; // Reset last sender
-                }
+                    // Store colors received from server
+            if (data.colors) {
+                Object.assign(userColors, data.colors);
+            }
+                
                 
                 // Create a temporary container for messages
                 const fragment = document.createDocumentFragment();
@@ -725,84 +729,93 @@
         
         // Handle message submission
         chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const message = chatInput.value.trim();
-            
-            if (message && socket) {
-                // Send message to server
-                socket.emit('chat_message', { message });
-                
-                // Clear input
-                chatInput.value = '';
-                chatInput.focus();
-            }
+    e.preventDefault();
+    const message = chatInput.value.trim();
+    
+    if (message && socket) {
+        // Send message to server with color
+        socket.emit('chat_message', { 
+            message,
+            color: userColors[username] || '#FFFFFF'
         });
         
+        // Clear input
+        chatInput.value = '';
+        chatInput.focus();
+    }
+});
+        
         // Create message element with username side by side with message
-        function createMessageElement(sender, message, timestamp, isContinuation = false) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            
-            if (!isContinuation) {
-                // Create message info section (username + timestamp)
-                const messageInfo = document.createElement('div');
-                messageInfo.className = 'message-info';
-                
-                // Create sender element
-                const senderElement = document.createElement('span');
-                senderElement.className = 'message-sender';
-                senderElement.setAttribute('data-sender', sender);
-                senderElement.textContent = sender;
-                
-                // Apply username color
-                if (userColors[sender]) {
-                    senderElement.style.color = userColors[sender];
-                }
-                
-                // Add separator
-                const separatorElement = document.createElement('span');
-                separatorElement.className = 'message-separator';
-                separatorElement.textContent = '~';
-                
-                // Add timestamp
-                const timestampElement = document.createElement('span');
-                timestampElement.className = 'timestamp';
-                timestampElement.textContent = formatTimestamp(timestamp);
-                
-                // Assemble message info
-                messageInfo.appendChild(senderElement);
-                messageInfo.appendChild(separatorElement);
-                messageDiv.appendChild(messageInfo);
-            } else {
-                messageDiv.className = 'message continued-message';
-            }
-            
-            // Create message content
-            const messageContent = document.createElement('div');
-            messageContent.className = 'message-content';
-            messageContent.textContent = message;
-            
-            // Apply message color for the actual content
-            if (userColors[sender]) {
-                messageContent.style.color = userColors[sender];
-            }
-            
-            messageDiv.appendChild(messageContent);
-            
-            return messageDiv;
+        function createMessageElement(sender, message, timestamp, isContinuation = false, color) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+    
+    if (!isContinuation) {
+        // Create message info section (username + timestamp)
+        const messageInfo = document.createElement('div');
+        messageInfo.className = 'message-info';
+        
+        // Create sender element
+        const senderElement = document.createElement('span');
+        senderElement.className = 'message-sender';
+        senderElement.setAttribute('data-sender', sender);
+        senderElement.textContent = sender;
+        
+        // Apply username color
+        if (color) {
+            senderElement.style.color = color;
         }
         
+        // Add separator
+        const separatorElement = document.createElement('span');
+        separatorElement.className = 'message-separator';
+        separatorElement.textContent = '~';
+        
+        // Add timestamp
+        const timestampElement = document.createElement('span');
+        timestampElement.className = 'timestamp';
+        timestampElement.textContent = formatTimestamp(timestamp);
+        
+        // Assemble message info
+        messageInfo.appendChild(senderElement);
+        messageInfo.appendChild(separatorElement);
+        messageDiv.appendChild(messageInfo);
+    } else {
+        messageDiv.className = 'message continued-message';
+    }
+    
+    // Create message content
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    messageContent.textContent = message;
+    
+    // Apply message color for the actual content
+    if (color) {
+        messageContent.style.color = color;
+    }
+    
+    messageDiv.appendChild(messageContent);
+    
+    return messageDiv;
+}
+        
         // Display message in the chat
-        function displayMessage(sender, message, timestamp) {
-            const isContinuation = (sender === lastMessageSender);
-            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation);
-            
-            chatMessages.appendChild(messageDiv);
-            lastMessageSender = sender;
-            
-            // Always scroll to bottom for new messages
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+        function displayMessage(sender, message, timestamp, color) {
+    // Use the color passed from the server if available, otherwise use stored colors
+    const messageColor = color || userColors[sender] || '#FFFFFF';
+    if (!userColors[sender]) {
+        userColors[sender] = messageColor;
+    }
+    
+    const isContinuation = (sender === lastMessageSender);
+    const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, messageColor);
+    
+    chatMessages.appendChild(messageDiv);
+    lastMessageSender = sender;
+    
+    // Always scroll to bottom for new messages
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
         
         // Create system message element
         function createSystemMessageElement(message, timestamp) {
@@ -829,30 +842,33 @@
         }
         
         // Update online users list
-        function updateOnlineUsers(users) {
-            onlineUsers.innerHTML = '';
-            
-            users.forEach(user => {
-                const userItem = document.createElement('div');
-                userItem.className = 'user-item';
-                
-                const userStatus = document.createElement('div');
-                userStatus.className = 'user-status';
-                
-                const userName = document.createElement('span');
-                userName.textContent = user === username ? `${user} (You)` : user;
-                
-                // Apply username color
-                if (userColors[user]) {
-                    userName.style.color = userColors[user];
-                }
-                
-                userItem.appendChild(userStatus);
-                userItem.appendChild(userName);
-                
-                onlineUsers.appendChild(userItem);
-            });
+        function updateOnlineUsers(users, colors = {}) {
+    onlineUsers.innerHTML = '';
+    
+    users.forEach(user => {
+        const userItem = document.createElement('div');
+        userItem.className = 'user-item';
+        
+        const userStatus = document.createElement('div');
+        userStatus.className = 'user-status';
+        
+        const userName = document.createElement('span');
+        userName.textContent = user === username ? `${user} (You)` : user;
+        
+        // Apply username color - use colors from server if available
+        if (colors && colors[user]) {
+            userColors[user] = colors[user]; // Store color from server
+            userName.style.color = colors[user];
+        } else if (userColors[user]) {
+            userName.style.color = userColors[user];
         }
+        
+        userItem.appendChild(userStatus);
+        userItem.appendChild(userName);
+        
+        onlineUsers.appendChild(userItem);
+    });
+}
     </script>
 </body>
 </html>
