@@ -513,8 +513,8 @@ usernameForm.addEventListener('submit', (e) => {
     const enteredUsername = usernameInput.value.trim();
     const selectedColor = document.getElementById('color-input').value; // Get color
 
-    if (enteredUsername.length > 3) {
-        alert("Username must be 3 characters or less.");
+    if (enteredUsername.length > 8) {
+        alert("Username must be 8 characters or less.");
         return;
     }
 
@@ -689,7 +689,7 @@ function displayMessage(sender, message, timestamp, isMine) {
     messageInfo.className = 'message-info';
 
     const senderSpan = document.createElement('span');
-    senderSpan.textContent = isMine ? 'You' : sender;
+    senderSpan.textContent = sender; // display the actual username
 
     const timestampSpan = document.createElement('span');
     timestampSpan.className = 'timestamp';
