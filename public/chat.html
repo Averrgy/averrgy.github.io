@@ -140,195 +140,34 @@
             border-bottom: none;
         }
         
-        // Changes to public/chat.html
-
-// 1. Add these CSS modifications in the <style> section:
-
-// Modify the .message class to add better alignment
-.message {
-    margin-bottom: 0.5rem;
-    padding: 0.3rem 0;
-    max-width: 100%;
-    word-wrap: break-word;
-    display: flex;
-}
-
-// Modify the .message-sender class to make text bigger
-.message-sender {
-    font-weight: bold;
-    margin-right: 0.5rem;
-    white-space: nowrap;
-    font-size: 1.1rem; /* Increased font size */
-}
-
-// Modify the .message-content class to make message text bigger
-.message-content {
-    flex: 1;
-    font-size: 1.1rem; /* Increased font size */
-}
-
-// Update the .continued-message class to properly align with first message
-.continued-message {
-    padding-left: 0;
-    margin-left: 1.5rem; /* Align with the first message content */
-    margin-bottom: 0.5rem;
-    border-left: none; /* Remove the left border */
-}
-
-// 2. Modify the JavaScript section to share color information:
-
-// Inside initializeChat function, modify the connection code:
-socket = io('https://averrgy-github-io.onrender.com', {
-    query: {
-        username,
-        color: document.getElementById('color-input').value // Send color with connection
-    }
-});
-
-// Modify the socket.on('chat_message') handler:
-socket.on('chat_message', (data) => {
-    // Store the color if received
-    if (data.color && !userColors[data.username]) {
-        userColors[data.username] = data.color;
-    }
-    displayMessage(data.username, data.message, data.timestamp, data.color);
-});
-
-// Update the displayMessage function:
-function displayMessage(sender, message, timestamp, color) {
-    // Use the color passed from the server if available, otherwise use stored colors
-    const messageColor = color || userColors[sender] || '#FFFFFF';
-    if (!userColors[sender]) {
-        userColors[sender] = messageColor;
-    }
-    
-    const isContinuation = (sender === lastMessageSender);
-    const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, messageColor);
-    
-    chatMessages.appendChild(messageDiv);
-    lastMessageSender = sender;
-    
-    // Always scroll to bottom for new messages
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-// Update the createMessageElement function:
-function createMessageElement(sender, message, timestamp, isContinuation = false, color) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message';
-    
-    if (!isContinuation) {
-        // Create message info section (username + timestamp)
-        const messageInfo = document.createElement('div');
-        messageInfo.className = 'message-info';
-        
-        // Create sender element
-        const senderElement = document.createElement('span');
-        senderElement.className = 'message-sender';
-        senderElement.setAttribute('data-sender', sender);
-        senderElement.textContent = sender;
-        
-        // Apply username color
-        if (color) {
-            senderElement.style.color = color;
+        .message {
+            margin-bottom: 0.5rem;
+            padding: 0.3rem 0;
+            max-width: 100%;
+            word-wrap: break-word;
+            display: flex;
         }
         
-        // Add separator
-        const separatorElement = document.createElement('span');
-        separatorElement.className = 'message-separator';
-        separatorElement.textContent = '~';
-        
-        // Add timestamp
-        const timestampElement = document.createElement('span');
-        timestampElement.className = 'timestamp';
-        timestampElement.textContent = formatTimestamp(timestamp);
-        
-        // Assemble message info
-        messageInfo.appendChild(senderElement);
-        messageInfo.appendChild(separatorElement);
-        messageDiv.appendChild(messageInfo);
-    } else {
-        messageDiv.className = 'message continued-message';
-    }
-    
-    // Create message content
-    const messageContent = document.createElement('div');
-    messageContent.className = 'message-content';
-    messageContent.textContent = message;
-    
-    // Apply message color for the actual content
-    if (color) {
-        messageContent.style.color = color;
-    }
-    
-    messageDiv.appendChild(messageContent);
-    
-    return messageDiv;
-}
-
-// Update the socket.on('user_join') handler:
-socket.on('user_join', (data) => {
-    displaySystemMessage(`${data.username} has joined the chat`);
-    updateOnlineUsers(data.users, data.colors); // Add colors parameter
-});
-
-// Update the socket.on('update_users') handler:
-socket.on('update_users', (data) => {
-    updateOnlineUsers(data.users, data.colors); // Add colors parameter
-});
-
-// Update the updateOnlineUsers function:
-function updateOnlineUsers(users, colors = {}) {
-    onlineUsers.innerHTML = '';
-    
-    users.forEach(user => {
-        const userItem = document.createElement('div');
-        userItem.className = 'user-item';
-        
-        const userStatus = document.createElement('div');
-        userStatus.className = 'user-status';
-        
-        const userName = document.createElement('span');
-        userName.textContent = user === username ? `${user} (You)` : user;
-        
-        // Apply username color - use colors from server if available
-        if (colors && colors[user]) {
-            userColors[user] = colors[user]; // Store color from server
-            userName.style.color = colors[user];
-        } else if (userColors[user]) {
-            userName.style.color = userColors[user];
+        .message-sender {
+            font-weight: bold;
+            margin-right: 0.5rem;
+            white-space: nowrap;
         }
         
-        userItem.appendChild(userStatus);
-        userItem.appendChild(userName);
+        .message-separator {
+            margin: 0 0.5rem;
+        }
         
-        onlineUsers.appendChild(userItem);
-    });
-}
-
-// Update the message submission handler:
-chatForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const message = chatInput.value.trim();
-    
-    if (message && socket) {
-        // Send message to server with color
-        socket.emit('chat_message', { 
-            message,
-            color: userColors[username] || '#FFFFFF'
-        });
+        .message-content {
+            flex: 1;
+        }
         
-        // Clear input
-        chatInput.value = '';
-        chatInput.focus();
-    }
-});
-
-// In the usernameForm submit handler, update the socket.emit call:
-socket.emit('user_join', { 
-    username,
-    color: selectedColor 
-});
+        .message-info {
+            font-size: 0.8rem;
+            color: #aaa;
+            display: flex;
+            align-items: center;
+        }
         
         .timestamp {
             font-size: 0.7rem;
