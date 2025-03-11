@@ -146,25 +146,24 @@
             max-width: 100%;
             word-wrap: break-word;
             display: flex;
-            --sender-offset: 0;
+            --sender-offset: 0; /* Initialize the offset */
         }
 
         .message-sender {
             font-weight: bold;
             margin-right: 0.5rem;
             white-space: nowrap;
-            /* Remove width contribution */
+            --sender-offset: calc(100% + 0.5rem); /* Add sender width + margin */
         }
 
         .message-separator {
             margin: 0 0.5rem;
-            /* Remove width contribution */
+            --sender-offset: calc(var(--sender-offset) + 100% + 1rem); /* Add separator width + margins */
         }
 
         .message-content {
             flex: 1;
             word-break: break-word;
-            --sender-offset: 1rem; /* Only include the space */
         }
         
         .message-info {
