@@ -11,7 +11,7 @@
             padding: 0;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            height: 100vh;
             background-color: #121212;
             color: #e0e0e0;
         }
@@ -52,7 +52,7 @@
         }
         
         .load-more-container {
-            padding: 0.5rem rem;
+            padding: 0.5rem 1rem;
             background-color: #1e1e1e;
             border-bottom: 1px solid #333;
         }
@@ -83,6 +83,7 @@
             margin: 0;
             width: 100%;
             box-sizing: border-box;
+            overflow: hidden; /* Prevent scrolling of main content */
         }
         
         .user-list {
@@ -91,6 +92,7 @@
             background-color: #1a1a1a;
             padding: 1rem;
             box-sizing: border-box;
+            overflow-y: auto;
         }
         
         .user-list h3 {
@@ -99,7 +101,7 @@
         }
         
         .online-users {
-            max-height: 70vh;
+            max-height: calc(100vh - 200px);
             overflow-y: auto;
         }
         
@@ -107,7 +109,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            height: 70vh;
+            height: 100%;
         }
         
         .chat-header {
@@ -136,46 +138,49 @@
             background-color: #1a1a1a;
             border-top: none;
             border-bottom: none;
-            height: 100%;
-            max-height: calc(70vh - 110px);
         }
         
         .message {
-            margin-bottom: 1rem;
-            padding: 0.5rem 1rem;
-            border-radius: 1rem;
-            max-width: 70%;
+            margin-bottom: 0.5rem;
+            padding: 0.3rem 0;
+            max-width: 100%;
             word-wrap: break-word;
+            display: flex;
+        }
+        
+        .message-sender {
+            font-weight: bold;
+            margin-right: 0.5rem;
+            white-space: nowrap;
+        }
+        
+        .message-separator {
+            margin: 0 0.5rem;
+        }
+        
+        .message-content {
+            flex: 1;
         }
         
         .message-info {
             font-size: 0.8rem;
-            margin-bottom: 0.3rem;
             color: #aaa;
+            display: flex;
+            align-items: center;
         }
         
         .timestamp {
             font-size: 0.7rem;
             color: #777;
-            margin-left: 5px;
+            margin-left: 0.5rem;
         }
         
-    .message {
-        margin-bottom: 1rem;
-        padding: 0.5rem 1rem;
-        max-width: 70%;
-        word-wrap: break-word;
-        /* Remove margin-left: auto; or add margin-right: auto; */
-        background-color: transparent;
-    }
-
-    .other-message {
-        background-color: transparent;
-    }
-
-    .my-message {
-        background-color: transparent;
-    }
+        .continued-message {
+            padding-left: 0.5rem;
+            margin-left: 0.5rem;
+            border-left: 2px solid #333;
+            margin-bottom: 0.5rem;
+        }
         
         .system-message {
             text-align: center;
@@ -252,7 +257,6 @@
             color: white;
             text-align: center;
             padding: 1rem;
-            margin-top: auto;
         }
         
         .modal {
@@ -347,11 +351,7 @@
             }
             
             .chat-container {
-                height: 50vh;
-            }
-            
-            .chat-messages {
-                max-height: calc(50vh - 110px);
+                height: calc(100vh - 300px);
             }
             
             .load-more-container {
@@ -419,20 +419,21 @@
     
     <!-- Username Modal -->
     <div class="modal" id="username-modal">
-    <div class="modal-content">
-        <h2>Enter Your Username</h2>
-        <form id="username-form">
-            <div class="form-group">
-                <label for="username-input">Username:</label>
-                <input type="text" class="form-input" id="username-input" placeholder="Your username" required>
-            </div>
-            <div class="form-group">
-                <label for="color-input">Message Color:</label>
-                <input type="color" class="form-input" id="color-input" value="#FFFFFF"> </div>
-            <button type="submit" class="form-button">Join Chat</button>
-        </form>
+        <div class="modal-content">
+            <h2>Enter Your Username</h2>
+            <form id="username-form">
+                <div class="form-group">
+                    <label for="username-input">Username:</label>
+                    <input type="text" class="form-input" id="username-input" placeholder="Your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="color-input">Message Color:</label>
+                    <input type="color" class="form-input" id="color-input" value="#FFFFFF">
+                </div>
+                <button type="submit" class="form-button">Join Chat</button>
+            </form>
+        </div>
     </div>
-</div>
     
     <footer>
         <p>&copy; 2025 My Website. All rights reserved.</p>
@@ -445,6 +446,7 @@
         let socket;
         let currentPage = 1;
         let isLoading = false;
+        let lastMessageSender = null; // Track the last message sender
         
         // Set the password here - CHANGE THIS TO YOUR DESIRED PASSWORD
         const correctPassword = "hatty";
@@ -464,6 +466,9 @@
         const connectionStatus = document.getElementById('connection-status');
         const loadMoreBtn = document.getElementById('load-more-btn');
         const loadingIndicator = document.getElementById('loading-indicator');
+        
+        // Store user colors
+        let userColors = {};
         
         // Show password modal on page load
         window.addEventListener('DOMContentLoaded', () => {
@@ -490,21 +495,19 @@
         });
         
         // Handle username submission
-        let userColors = {}; // Store user colors
-
         usernameForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const enteredUsername = usernameInput.value.trim();
-            const selectedColor = document.getElementById('color-input').value; // Get color
-
+            const selectedColor = document.getElementById('color-input').value;
+            
             if (enteredUsername.length > 8) {
                 alert("Username must be 8 characters or less.");
                 return;
             }
-
+            
             username = enteredUsername;
             userColors[username] = selectedColor; // Store color
-
+            
             if (username) {
                 usernameModal.style.display = 'none';
                 initializeChat();
@@ -543,7 +546,7 @@
             });
             
             socket.on('chat_message', (data) => {
-                displayMessage(data.username, data.message, data.timestamp, data.username === username);
+                displayMessage(data.username, data.message, data.timestamp);
             });
             
             socket.on('chat_history', (data) => {
@@ -553,19 +556,30 @@
                 if (currentPage === 1) {
                     // Clear existing messages if this is the first page
                     chatMessages.innerHTML = '';
+                    lastMessageSender = null; // Reset last sender
                 }
                 
                 // Create a temporary container for messages
                 const fragment = document.createDocumentFragment();
                 const messagesArray = [];
                 
-                // Collect all messages
-                data.messages.forEach(msg => {
+                // Process messages
+                data.messages.forEach((msg, index) => {
                     if (msg.type === 'system') {
                         const messageDiv = createSystemMessageElement(msg.message, msg.timestamp);
                         messagesArray.push(messageDiv);
+                        lastMessageSender = null; // System message resets the sender tracking
                     } else {
-                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, msg.username === username);
+                        // For regular messages, check if we need to create a new message group
+                        let isContinuation = false;
+                        
+                        // Skip continuity check for first page since we're showing newest messages
+                        if (currentPage > 1 && index > 0) {
+                            const prevMsg = data.messages[index - 1];
+                            isContinuation = prevMsg.type !== 'system' && prevMsg.username === msg.username;
+                        }
+                        
+                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation);
                         messagesArray.push(messageDiv);
                     }
                 });
@@ -573,6 +587,82 @@
                 // If loading the first page (newest messages), reverse the order
                 if (currentPage === 1) {
                     messagesArray.reverse();
+                    
+                    // For first page (newest messages), we need to check continuations in reverse
+                    if (messagesArray.length > 0) {
+                        let currentSender = null;
+                        
+                        // Process from bottom to top (oldest to newest in the view)
+                        for (let i = 0; i < messagesArray.length; i++) {
+                            const messageDiv = messagesArray[i];
+                            
+                            // Skip system messages
+                            if (messageDiv.classList.contains('system-message')) {
+                                currentSender = null;
+                                continue;
+                            }
+                            
+                            // Get the sender of this message
+                            const senderEl = messageDiv.querySelector('.message-sender');
+                            if (!senderEl) continue;
+                            
+                            const sender = senderEl.getAttribute('data-sender');
+                            
+                            // If this is a continuation from the previous message
+                            if (currentSender === sender && i > 0) {
+                                messageDiv.classList.add('continued-message');
+                                // Hide the sender info
+                                const messageInfo = messageDiv.querySelector('.message-info');
+                                if (messageInfo) {
+                                    messageInfo.style.display = 'none';
+                                }
+                            }
+                            
+                            currentSender = sender;
+                        }
+                        
+                        // Set the last message sender for future messages
+                        if (messagesArray.length > 0) {
+                            const lastMessage = messagesArray[messagesArray.length - 1];
+                            if (!lastMessage.classList.contains('system-message')) {
+                                const senderEl = lastMessage.querySelector('.message-sender');
+                                if (senderEl) {
+                                    lastMessageSender = senderEl.getAttribute('data-sender');
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // For older pages, process continuations normally (top to bottom)
+                    let currentSender = null;
+                    
+                    for (let i = 0; i < messagesArray.length; i++) {
+                        const messageDiv = messagesArray[i];
+                        
+                        // Skip system messages
+                        if (messageDiv.classList.contains('system-message')) {
+                            currentSender = null;
+                            continue;
+                        }
+                        
+                        // Get the sender of this message
+                        const senderEl = messageDiv.querySelector('.message-sender');
+                        if (!senderEl) continue;
+                        
+                        const sender = senderEl.getAttribute('data-sender');
+                        
+                        // If this is a continuation from the previous message
+                        if (currentSender === sender && i > 0) {
+                            messageDiv.classList.add('continued-message');
+                            // Hide the sender info
+                            const messageInfo = messageDiv.querySelector('.message-info');
+                            if (messageInfo) {
+                                messageInfo.style.display = 'none';
+                            }
+                        }
+                        
+                        currentSender = sender;
+                    }
                 }
                 
                 // Append all messages to the fragment
@@ -648,51 +738,73 @@
             }
         });
         
-        // Create message element but don't add to DOM yet
-        function createMessageElement(sender, message, timestamp, isMine) {
+        // Create message element with username side by side with message
+        function createMessageElement(sender, message, timestamp, isContinuation = false) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isMine ? 'my-message' : 'other-message'}`;
-
-            const messageInfo = document.createElement('div');
-            messageInfo.className = 'message-info';
-
-            const senderSpan = document.createElement('span');
-            senderSpan.textContent = sender; // display the actual username
-
-            const timestampSpan = document.createElement('span');
-            timestampSpan.className = 'timestamp';
-            timestampSpan.textContent = formatTimestamp(timestamp);
-
-            messageInfo.appendChild(senderSpan);
-            messageInfo.appendChild(timestampSpan);
-
-            const messageContent = document.createElement('p');
+            messageDiv.className = 'message';
+            
+            if (!isContinuation) {
+                // Create message info section (username + timestamp)
+                const messageInfo = document.createElement('div');
+                messageInfo.className = 'message-info';
+                
+                // Create sender element
+                const senderElement = document.createElement('span');
+                senderElement.className = 'message-sender';
+                senderElement.setAttribute('data-sender', sender);
+                senderElement.textContent = sender;
+                
+                // Apply username color
+                if (userColors[sender]) {
+                    senderElement.style.color = userColors[sender];
+                }
+                
+                // Add separator
+                const separatorElement = document.createElement('span');
+                separatorElement.className = 'message-separator';
+                separatorElement.textContent = '~';
+                
+                // Add timestamp
+                const timestampElement = document.createElement('span');
+                timestampElement.className = 'timestamp';
+                timestampElement.textContent = formatTimestamp(timestamp);
+                
+                // Assemble message info
+                messageInfo.appendChild(senderElement);
+                messageInfo.appendChild(separatorElement);
+                messageDiv.appendChild(messageInfo);
+            } else {
+                messageDiv.className = 'message continued-message';
+            }
+            
+            // Create message content
+            const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
             messageContent.textContent = message;
-
-            messageDiv.appendChild(messageInfo);
+            
+            // Apply message color for the actual content
+            if (userColors[sender]) {
+                messageContent.style.color = userColors[sender];
+            }
+            
             messageDiv.appendChild(messageContent);
-
+            
             return messageDiv;
         }
         
         // Display message in the chat
-        function displayMessage(sender, message, timestamp, isMine) {
-            const messageDiv = createMessageElement(sender, message, timestamp, isMine);
-            
-            // Apply user color if available
-            const messageContent = messageDiv.querySelector('.message-content');
-            if (messageContent && userColors[sender]) {
-                messageContent.style.color = userColors[sender];
-            }
+        function displayMessage(sender, message, timestamp) {
+            const isContinuation = (sender === lastMessageSender);
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation);
             
             chatMessages.appendChild(messageDiv);
+            lastMessageSender = sender;
             
             // Always scroll to bottom for new messages
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
-        // Create system message element but don't add to DOM yet
+        // Create system message element
         function createSystemMessageElement(message, timestamp) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'system-message';
@@ -710,6 +822,7 @@
         function displaySystemMessage(message, timestamp) {
             const messageDiv = createSystemMessageElement(message, timestamp);
             chatMessages.appendChild(messageDiv);
+            lastMessageSender = null; // Reset last sender after system message
             
             // Always scroll to bottom for system messages
             chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -728,6 +841,11 @@
                 
                 const userName = document.createElement('span');
                 userName.textContent = user === username ? `${user} (You)` : user;
+                
+                // Apply username color
+                if (userColors[user]) {
+                    userName.style.color = userColors[user];
+                }
                 
                 userItem.appendChild(userStatus);
                 userItem.appendChild(userName);
