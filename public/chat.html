@@ -14,7 +14,7 @@
     <title>hatchat - Chat</title>
     <style>
         body {
-            font-family: DejaVu Sans Mono, monospace;
+            font-family: Courier, monospace;
             margin: 0;
             padding: 0;
             display: flex;
@@ -527,123 +527,15 @@ usernameForm.addEventListener('submit', (e) => {
     }
 });
 
-// ... (rest of your HTML and CSS)
+function displayMessage(sender, message, timestamp, isMine) {
+    const messageDiv = createMessageElement(sender, message, timestamp, isMine);
+    const messageContent = messageDiv.querySelector('.message-content'); // Get message content
 
-<script>
-    // ... (rest of your variables)
-
-    let userColors = {}; // Store user colors
-    let lastSender = null;
-    let lastMessageDiv = null;
-
-    usernameForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const enteredUsername = usernameInput.value.trim();
-        const selectedColor = document.getElementById('color-input').value; // Get color
-
-        if (enteredUsername.length > 8) {
-            alert("Username must be 8 characters or less.");
-            return;
-        }
-
-        username = enteredUsername;
-        userColors[username] = selectedColor; // Store color
-
-        if (username) {
-            usernameModal.style.display = 'none';
-            initializeChat();
-        }
-    });
-
-    function displayMessage(sender, message, timestamp, isMine) {
-        if (lastSender === sender && lastMessageDiv) {
-            const messageContent = lastMessageDiv.querySelector('.message-content');
-            if (messageContent) {
-                messageContent.textContent += "\n" + message;
-            }
-            const timestampSpan = lastMessageDiv.querySelector('.timestamp');
-            if (timestampSpan) {
-                timestampSpan.textContent = formatTimestamp(timestamp);
-            }
-        } else {
-            const messageDiv = createMessageElement(sender, message, timestamp, isMine);
-            const messageContent = messageDiv.querySelector('.message-content');
-
-            if (messageContent && userColors[sender]) {
-                messageContent.style.color = userColors[sender];
-            }
-
-            chatMessages.appendChild(messageDiv);
-            lastSender = sender;
-            lastMessageDiv = messageDiv;
-        }
-
-        const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
-        if (isScrolledToBottom || isMine) {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+    if (messageContent && userColors[sender]) {
+        messageContent.style.color = userColors[sender]; // Apply color
     }
 
-    // ... (rest of your functions)
-
-    function initializeChat() {
-        // ... (socket connection)
-
-        socket.on('chat_history', (data) => {
-            loadingIndicator.style.display = 'none';
-            isLoading = false;
-
-            if (currentPage === 1) {
-                chatMessages.innerHTML = '';
-            }
-
-            const fragment = document.createDocumentFragment();
-            const messagesArray = [];
-
-            data.messages.forEach(msg => {
-                if (msg.type === 'system') {
-                    const messageDiv = createSystemMessageElement(msg.message, msg.timestamp);
-                    messagesArray.push(messageDiv);
-                } else {
-                    const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, msg.username === username);
-                    // Apply color to historical messages
-                    const messageContent = messageDiv.querySelector('.message-content');
-                    if (messageContent && userColors[msg.username]) {
-                        messageContent.style.color = userColors[msg.username];
-                    }
-                    messagesArray.push(messageDiv);
-                }
-            });
-
-            if (currentPage === 1) {
-                messagesArray.reverse();
-            }
-
-            messagesArray.forEach(element => {
-                fragment.appendChild(element);
-            });
-
-            if (currentPage === 1) {
-                chatMessages.appendChild(fragment);
-            } else {
-                chatMessages.insertBefore(fragment, chatMessages.firstChild);
-            }
-
-            if (data.messages.length < 20) {
-                loadMoreBtn.disabled = true;
-            } else {
-                loadMoreBtn.disabled = false;
-            }
-
-            if (currentPage === 1) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-        });
-
-        // ... (rest of your socket events)
-    }
-
-    // ... (rest of your functions)
+    chatMessages.appendChild(messageDiv);
 
     const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
     if (isScrolledToBottom || isMine) {
@@ -796,10 +688,14 @@ usernameForm.addEventListener('submit', (e) => {
     const messageInfo = document.createElement('div');
     messageInfo.className = 'message-info';
 
+    const senderSpan = document.createElement('span');
+    senderSpan.textContent = sender; // display the actual username
+
     const timestampSpan = document.createElement('span');
     timestampSpan.className = 'timestamp';
     timestampSpan.textContent = formatTimestamp(timestamp);
 
+    messageInfo.appendChild(senderSpan);
     messageInfo.appendChild(timestampSpan);
 
     const messageContent = document.createElement('p');
