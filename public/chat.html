@@ -146,26 +146,25 @@
             max-width: 100%;
             word-wrap: break-word;
             display: flex;
-            --sender-width: 0;
-            --separator-width: 0;
+            --sender-offset: 0;
         }
 
         .message-sender {
             font-weight: bold;
             margin-right: 0.5rem;
             white-space: nowrap;
-            --sender-width: calc(100% + 0.5rem);
+            --sender-offset: calc(100% + 0.5rem);
         }
 
         .message-separator {
             margin: 0 0.5rem;
-            --separator-width: calc(100% + 1rem); /* Include margins */
+            --sender-offset: calc(var(--sender-offset) + 1rem); /* Add separator width + margins */
         }
 
         .message-content {
             flex: 1;
             word-break: break-word;
-    }
+        }
         
         .message-info {
             font-size: 0.8rem;
@@ -181,7 +180,7 @@
         }
         
         .continued-message {
-            padding-left: calc(var(--sender-width) + var(--separator-width));
+            padding-left: var(--sender-offset);
             border-left: 3px solid #333;
             margin-bottom: 0.5rem;
             margin-top: 0.5rem;
