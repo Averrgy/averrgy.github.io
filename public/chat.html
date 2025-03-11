@@ -49,10 +49,35 @@
             color: #ccc;
         }
         
+        .load-more-container {
+            padding: 0.5rem 2rem;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .load-more-btn {
+            padding: 0.3rem 0.8rem;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .load-more-btn:hover {
+            background-color: #555;
+        }
+        
+        .load-more-btn:disabled {
+            background-color: #999;
+            cursor: not-allowed;
+        }
+        
         .main-content {
             flex: 1;
             display: flex;
-            padding: 2rem;
+            padding: 0 2rem 2rem;
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
@@ -98,6 +123,12 @@
             color: #666;
         }
         
+        .timestamp {
+            font-size: 0.7rem;
+            color: #999;
+            margin-left: 5px;
+        }
+        
         .message-content {
             margin: 0;
         }
@@ -111,6 +142,13 @@
             background-color: #dcf8c6;
             align-self: flex-end;
             margin-left: auto;
+        }
+        
+        .system-message {
+            text-align: center;
+            margin: 0.5rem 0;
+            font-style: italic;
+            color: #666;
         }
         
         .chat-form {
@@ -257,11 +295,23 @@
             font-size: 0.9rem;
         }
         
+        .loading-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+        
+        .loading-indicator::after {
+            content: "Loading messages...";
+            color: #666;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .main-content {
                 flex-direction: column;
-                padding: 1rem;
+                padding: 0 1rem 1rem;
             }
             
             .chat-container {
@@ -277,6 +327,10 @@
             .online-users {
                 height: auto;
                 max-height: 200px;
+            }
+            
+            .load-more-container {
+                padding: 0.5rem 1rem;
             }
         }
     </style>
@@ -295,6 +349,10 @@
         </nav>
     </header>
     
+    <div class="load-more-container">
+        <button id="load-more-btn" class="load-more-btn">Load Earlier Messages</button>
+    </div>
+    
     <div class="main-content">
         <div class="chat-container">
             <div class="chat-header">
@@ -302,6 +360,7 @@
                 <p id="connection-status">Connecting...</p>
             </div>
             <div class="chat-messages" id="chat-messages">
+                <div class="loading-indicator" id="loading-indicator"></div>
                 <!-- Messages will be added here -->
             </div>
             <form class="chat-form" id="chat-form">
@@ -364,6 +423,8 @@
         // Initialize variables
         let username = '';
         let socket;
+        let currentPage = 1;
+        let isLoading = false;
         
         // Set the password here - CHANGE THIS TO YOUR DESIRED PASSWORD
         const correctPassword = "hatty";
@@ -381,6 +442,8 @@
         const passwordInput = document.getElementById('password-input');
         const passwordError = document.getElementById('password-error');
         const connectionStatus = document.getElementById('connection-status');
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
         
         // Show password modal on page load
         window.addEventListener('DOMContentLoaded', () => {
@@ -417,6 +480,12 @@
             }
         });
         
+        // Format timestamp
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString();
+        }
+        
         function initializeChat() {
             // Connect to the Socket.IO server with the username
             socket = io('https://averrgy-github-io.onrender.com', {
@@ -432,6 +501,9 @@
                 
                 // Notify the server of a new user
                 socket.emit('user_join', { username });
+                
+                // Request message history
+                loadMessages(1);
             });
             
             socket.on('disconnect', () => {
@@ -440,38 +512,71 @@
             });
             
             socket.on('chat_message', (data) => {
-                displayMessage(data.username, data.message, data.username === username);
+                displayMessage(data.username, data.message, data.timestamp, data.username === username);
+            });
+            
+            socket.on('chat_history', (data) => {
+                loadingIndicator.style.display = 'none';
+                isLoading = false;
+                
+                if (currentPage === 1) {
+                    // Clear existing messages if this is the first page
+                    chatMessages.innerHTML = '';
+                }
+                
+                // Display messages in chronological order (oldest first)
+                data.messages.forEach(msg => {
+                    if (msg.type === 'system') {
+                        displaySystemMessage(msg.message, msg.timestamp);
+                    } else {
+                        displayMessage(msg.username, msg.message, msg.timestamp, msg.username === username);
+                    }
+                });
+                
+                // If no more messages to load, disable the load more button
+                if (data.messages.length < 20) {  // Assuming 20 is the page size on the server
+                    loadMoreBtn.disabled = true;
+                } else {
+                    loadMoreBtn.disabled = false;
+                }
+                
+                // If this is the first load, scroll to the bottom
+                if (currentPage === 1) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
             });
             
             socket.on('user_join', (data) => {
-                const joinMessage = document.createElement('div');
-                joinMessage.textContent = `${data.username} has joined the chat`;
-                joinMessage.style.textAlign = 'center';
-                joinMessage.style.margin = '0.5rem 0';
-                joinMessage.style.fontStyle = 'italic';
-                joinMessage.style.color = '#666';
-                chatMessages.appendChild(joinMessage);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                
+                displaySystemMessage(`${data.username} has joined the chat`);
                 updateOnlineUsers(data.users);
             });
             
             socket.on('user_leave', (data) => {
-                const leaveMessage = document.createElement('div');
-                leaveMessage.textContent = `${data.username} has left the chat`;
-                leaveMessage.style.textAlign = 'center';
-                leaveMessage.style.margin = '0.5rem 0';
-                leaveMessage.style.fontStyle = 'italic';
-                leaveMessage.style.color = '#666';
-                chatMessages.appendChild(leaveMessage);
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-                
+                displaySystemMessage(`${data.username} has left the chat`);
                 updateOnlineUsers(data.users);
             });
             
             socket.on('update_users', (data) => {
                 updateOnlineUsers(data.users);
             });
+            
+            // Load more messages button
+            loadMoreBtn.addEventListener('click', () => {
+                if (!isLoading) {
+                    currentPage++;
+                    loadMessages(currentPage);
+                }
+            });
+        }
+        
+        // Load messages from the server
+        function loadMessages(page) {
+            if (isLoading) return;
+            
+            isLoading = true;
+            loadingIndicator.style.display = 'flex';
+            
+            socket.emit('load_messages', { page });
         }
         
         // Handle message submission
@@ -490,13 +595,22 @@
         });
         
         // Display message in the chat
-        function displayMessage(sender, message, isMine) {
+        function displayMessage(sender, message, timestamp, isMine) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isMine ? 'my-message' : 'other-message'}`;
             
             const messageInfo = document.createElement('div');
             messageInfo.className = 'message-info';
-            messageInfo.textContent = isMine ? 'You' : sender;
+            
+            const senderSpan = document.createElement('span');
+            senderSpan.textContent = isMine ? 'You' : sender;
+            
+            const timestampSpan = document.createElement('span');
+            timestampSpan.className = 'timestamp';
+            timestampSpan.textContent = formatTimestamp(timestamp);
+            
+            messageInfo.appendChild(senderSpan);
+            messageInfo.appendChild(timestampSpan);
             
             const messageContent = document.createElement('p');
             messageContent.className = 'message-content';
@@ -506,7 +620,32 @@
             messageDiv.appendChild(messageContent);
             
             chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Only scroll to bottom if we're already at the bottom
+            const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
+            if (isScrolledToBottom || isMine) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+        
+        // Display system message in the chat
+        function displaySystemMessage(message, timestamp) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'system-message';
+            
+            if (timestamp) {
+                messageDiv.textContent = `${message} (${formatTimestamp(timestamp)})`;
+            } else {
+                messageDiv.textContent = message;
+            }
+            
+            chatMessages.appendChild(messageDiv);
+            
+            // Only scroll to bottom if we're already at the bottom
+            const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
+            if (isScrolledToBottom) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
         }
         
         // Update online users list
