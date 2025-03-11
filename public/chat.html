@@ -134,12 +134,12 @@
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 1rem;
             background-color: #1a1a1a;
             border-top: none;
             border-bottom: none;
+            /* Remove padding */
         }
-        
+
         .message {
             margin-bottom: 0.5rem;
             padding: 0.3rem 0;
@@ -147,6 +147,7 @@
             word-wrap: break-word;
             display: flex;
             --sender-offset: 0;
+            margin-left: 1rem; /* Add margin-left */
         }
 
         .message-sender {
