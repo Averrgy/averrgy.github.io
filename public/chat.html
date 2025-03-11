@@ -467,7 +467,7 @@
         const loadMoreBtn = document.getElementById('load-more-btn');
         const loadingIndicator = document.getElementById('loading-indicator');
         
-        // Store user colors
+        // Store user colors - now shared from server
         let userColors = {};
         
         // Show password modal on page load
@@ -506,11 +506,10 @@
             }
             
             username = enteredUsername;
-            userColors[username] = selectedColor; // Store color
             
             if (username) {
                 usernameModal.style.display = 'none';
-                initializeChat();
+                initializeChat(selectedColor);
             }
         });
         
@@ -520,11 +519,12 @@
             return date.toLocaleString();
         }
         
-        function initializeChat() {
-            // Connect to the Socket.IO server with the username
+        function initializeChat(selectedColor) {
+            // Connect to the Socket.IO server with the username and color
             socket = io('https://averrgy-github-io.onrender.com', {
                 query: {
-                    username
+                    username,
+                    color: selectedColor
                 }
             });
             
@@ -546,12 +546,17 @@
             });
             
             socket.on('chat_message', (data) => {
-                displayMessage(data.username, data.message, data.timestamp);
+                displayMessage(data.username, data.message, data.timestamp, data.color);
             });
             
             socket.on('chat_history', (data) => {
                 loadingIndicator.style.display = 'none';
                 isLoading = false;
+                
+                // Update user colors from server
+                if (data.userColors) {
+                    userColors = data.userColors;
+                }
                 
                 if (currentPage === 1) {
                     // Clear existing messages if this is the first page
@@ -579,7 +584,9 @@
                             isContinuation = prevMsg.type !== 'system' && prevMsg.username === msg.username;
                         }
                         
-                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation);
+                        // Use the color from the message if available, otherwise from userColors
+                        const messageColor = msg.color || userColors[msg.username];
+                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation, messageColor);
                         messagesArray.push(messageDiv);
                     }
                 });
@@ -692,11 +699,23 @@
             
             socket.on('user_join', (data) => {
                 displaySystemMessage(`${data.username} has joined the chat`);
+                
+                // Update user colors from server
+                if (data.userColors) {
+                    userColors = data.userColors;
+                }
+                
                 updateOnlineUsers(data.users);
             });
             
             socket.on('user_leave', (data) => {
                 displaySystemMessage(`${data.username} has left the chat`);
+                
+                // Update user colors from server
+                if (data.userColors) {
+                    userColors = data.userColors;
+                }
+                
                 updateOnlineUsers(data.users);
             });
             
@@ -704,11 +723,50 @@
                 updateOnlineUsers(data.users);
             });
             
+            socket.on('update_colors', (data) => {
+                // Update user colors from server
+                if (data.userColors) {
+                    userColors = data.userColors;
+                    
+                    // Update displayed colors for existing messages
+                    updateDisplayedColors();
+                    
+                    // Update user list colors
+                    updateOnlineUsers(Array.from(onlineUsers));
+                }
+            });
+            
             // Load more messages button
             loadMoreBtn.addEventListener('click', () => {
                 if (!isLoading) {
                     currentPage++;
                     loadMessages(currentPage);
+                }
+            });
+            
+            // Color input change event
+            document.getElementById('color-input').addEventListener('change', (e) => {
+                const newColor = e.target.value;
+                socket.emit('update_color', { color: newColor });
+            });
+        }
+        
+        // Update displayed colors for existing messages
+        function updateDisplayedColors() {
+            const senderElements = document.querySelectorAll('.message-sender');
+            senderElements.forEach(el => {
+                const sender = el.getAttribute('data-sender');
+                if (userColors[sender]) {
+                    el.style.color = userColors[sender];
+                    
+                    // Find the closest message content and update its color
+                    const messageDiv = el.closest('.message');
+                    if (messageDiv) {
+                        const contentEl = messageDiv.querySelector('.message-content');
+                        if (contentEl) {
+                            contentEl.style.color = userColors[sender];
+                        }
+                    }
                 }
             });
         }
@@ -739,7 +797,7 @@
         });
         
         // Create message element with username side by side with message
-        function createMessageElement(sender, message, timestamp, isContinuation = false) {
+        function createMessageElement(sender, message, timestamp, isContinuation = false, color) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
             
@@ -755,7 +813,9 @@
                 senderElement.textContent = sender;
                 
                 // Apply username color
-                if (userColors[sender]) {
+                if (color) {
+                    senderElement.style.color = color;
+                } else if (userColors[sender]) {
                     senderElement.style.color = userColors[sender];
                 }
                 
@@ -783,7 +843,9 @@
             messageContent.textContent = message;
             
             // Apply message color for the actual content
-            if (userColors[sender]) {
+            if (color) {
+                messageContent.style.color = color;
+            } else if (userColors[sender]) {
                 messageContent.style.color = userColors[sender];
             }
             
@@ -793,9 +855,9 @@
         }
         
         // Display message in the chat
-        function displayMessage(sender, message, timestamp) {
+        function displayMessage(sender, message, timestamp, color) {
             const isContinuation = (sender === lastMessageSender);
-            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation);
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
             
             chatMessages.appendChild(messageDiv);
             lastMessageSender = sender;
@@ -842,7 +904,7 @@
                 const userName = document.createElement('span');
                 userName.textContent = user === username ? `${user} (You)` : user;
                 
-                // Apply username color
+                // Apply username color from server's userColors
                 if (userColors[user]) {
                     userName.style.color = userColors[user];
                 }
