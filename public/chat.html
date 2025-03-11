@@ -1,14 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    </head>
-<body autocomplete="off">
-    <footer>
-        </footer>
-    <script>
-        </script>
-</body>
-</html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>hatchat - Chat</title>
@@ -508,40 +500,24 @@
         // Handle username submission
         let userColors = {}; // Store user colors
 
-usernameForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const enteredUsername = usernameInput.value.trim();
-    const selectedColor = document.getElementById('color-input').value; // Get color
+        usernameForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const enteredUsername = usernameInput.value.trim();
+            const selectedColor = document.getElementById('color-input').value; // Get color
 
-    if (enteredUsername.length > 8) {
-        alert("Username must be 8 characters or less.");
-        return;
-    }
+            if (enteredUsername.length > 8) {
+                alert("Username must be 8 characters or less.");
+                return;
+            }
 
-    username = enteredUsername;
-    userColors[username] = selectedColor; // Store color
+            username = enteredUsername;
+            userColors[username] = selectedColor; // Store color
 
-    if (username) {
-        usernameModal.style.display = 'none';
-        initializeChat();
-    }
-});
-
-function displayMessage(sender, message, timestamp, isMine) {
-    const messageDiv = createMessageElement(sender, message, timestamp, isMine);
-    const messageContent = messageDiv.querySelector('.message-content'); // Get message content
-
-    if (messageContent && userColors[sender]) {
-        messageContent.style.color = userColors[sender]; // Apply color
-    }
-
-    chatMessages.appendChild(messageDiv);
-
-    const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
-    if (isScrolledToBottom || isMine) {
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-}
+            if (username) {
+                usernameModal.style.display = 'none';
+                initializeChat();
+            }
+        });
         
         // Format timestamp
         function formatTimestamp(timestamp) {
@@ -682,42 +658,46 @@ function displayMessage(sender, message, timestamp, isMine) {
         
         // Create message element but don't add to DOM yet
         function createMessageElement(sender, message, timestamp, isMine) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isMine ? 'my-message' : 'other-message'}`;
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isMine ? 'my-message' : 'other-message'}`;
 
-    const messageInfo = document.createElement('div');
-    messageInfo.className = 'message-info';
+            const messageInfo = document.createElement('div');
+            messageInfo.className = 'message-info';
 
-    const senderSpan = document.createElement('span');
-    senderSpan.textContent = sender; // display the actual username
+            const senderSpan = document.createElement('span');
+            senderSpan.textContent = sender; // display the actual username
 
-    const timestampSpan = document.createElement('span');
-    timestampSpan.className = 'timestamp';
-    timestampSpan.textContent = formatTimestamp(timestamp);
+            const timestampSpan = document.createElement('span');
+            timestampSpan.className = 'timestamp';
+            timestampSpan.textContent = formatTimestamp(timestamp);
 
-    messageInfo.appendChild(senderSpan);
-    messageInfo.appendChild(timestampSpan);
+            messageInfo.appendChild(senderSpan);
+            messageInfo.appendChild(timestampSpan);
 
-    const messageContent = document.createElement('p');
-    messageContent.className = 'message-content';
-    messageContent.textContent = message;
+            const messageContent = document.createElement('p');
+            messageContent.className = 'message-content';
+            messageContent.textContent = message;
 
-    messageDiv.appendChild(messageInfo);
-    messageDiv.appendChild(messageContent);
+            messageDiv.appendChild(messageInfo);
+            messageDiv.appendChild(messageContent);
 
-    return messageDiv;
-}
+            return messageDiv;
+        }
         
         // Display message in the chat
         function displayMessage(sender, message, timestamp, isMine) {
             const messageDiv = createMessageElement(sender, message, timestamp, isMine);
+            
+            // Apply user color if available
+            const messageContent = messageDiv.querySelector('.message-content');
+            if (messageContent && userColors[sender]) {
+                messageContent.style.color = userColors[sender];
+            }
+            
             chatMessages.appendChild(messageDiv);
             
-            // Only scroll to bottom if we're already at the bottom
-            const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
-            if (isScrolledToBottom || isMine) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+            // Always scroll to bottom for new messages
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
         // Create system message element but don't add to DOM yet
@@ -739,11 +719,8 @@ function displayMessage(sender, message, timestamp, isMine) {
             const messageDiv = createSystemMessageElement(message, timestamp);
             chatMessages.appendChild(messageDiv);
             
-            // Only scroll to bottom if we're already at the bottom
-            const isScrolledToBottom = chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 50;
-            if (isScrolledToBottom) {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
+            // Always scroll to bottom for system messages
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
         // Update online users list
