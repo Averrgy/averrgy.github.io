@@ -774,11 +774,11 @@
                     // Update displayed colors for existing messages
                     updateDisplayedColors();
                     
-                    // Update user list colors
-                    updateOnlineUsers(Array.from(onlineUsers));
+                    // Don't try to update the user list here - wait for an update_users event
+                    // Remove or comment out: updateOnlineUsers(Array.from(onlineUsers));
                 }
             });
-            
+                        
             // Load more messages button
             loadMoreBtn.addEventListener('click', () => {
                 if (!isLoading) {
