@@ -280,22 +280,6 @@
             align-items: center;
         }
         
-        .settings-button {
-            padding: 0.3rem 0.8rem;
-            background-color: #333;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            text-decoration: none;
-            display: inline-block;
-        }
-        
-        .settings-button:hover {
-            background-color: #555;
-        }
-        
         .modal {
             display: none;
             position: fixed;
@@ -427,6 +411,7 @@
             <ul>
                 <li><a href="index.html">homepage</a></li>
                 <li><a href="chat.html">hatchat</a></li>
+                <li><a href="settings.html">settings</a></li>
             </ul>
         </nav>
     </header>
@@ -949,49 +934,6 @@
                 onlineUsers.appendChild(userItem);
             });
         }
-
-        // Create the settings button element
-    function createSettingsButton() {
-        const settingsButton = document.createElement('button');
-        settingsButton.id = 'settings-button';
-        settingsButton.textContent = 'Settings';
-        settingsButton.className = 'settings-button';
-        
-        // Add styles
-        settingsButton.style.position = 'fixed';
-        settingsButton.style.bottom = '20px';
-        settingsButton.style.left = '20px';
-        settingsButton.style.backgroundColor = '#1a1a1a';
-        settingsButton.style.color = '#e0e0e0';
-        settingsButton.style.border = '1px solid #333';
-        settingsButton.style.borderRadius = '4px';
-        settingsButton.style.padding = '8px 12px';
-        settingsButton.style.cursor = 'pointer';
-        settingsButton.style.fontFamily = 'DejaVu Sans Mono, monospace';
-        settingsButton.style.zIndex = '100';
-        
-        // Add hover effect
-        settingsButton.addEventListener('mouseover', () => {
-            settingsButton.style.backgroundColor = '#333';
-        });
-        
-        settingsButton.addEventListener('mouseout', () => {
-            settingsButton.style.backgroundColor = '#1a1a1a';
-        });
-        
-        // Add click event to navigate to settings page
-        settingsButton.addEventListener('click', () => {
-            window.location.href = 'settings.html';
-        });
-        
-        return settingsButton;
-    }
-
-    // Add the settings button to the DOM
-    document.addEventListener('DOMContentLoaded', () => {
-        const settingsButton = createSettingsButton();
-        document.body.appendChild(settingsButton);
-    });
         
     </script>
 </body>
