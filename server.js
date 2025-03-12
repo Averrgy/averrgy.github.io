@@ -24,6 +24,7 @@ const io = socketIo(server, {
 // Store online users and their colors
 const onlineUsers = new Set();
 const userColors = {}; // Store user colors
+let users = {}; // Store user data with DND status
 
 // Message storage setup
 const MESSAGES_FILE = path.join(__dirname, 'chat_messages.json');
@@ -77,24 +78,30 @@ io.on('connection', (socket) => {
     // Get username from query params
     const username = socket.handshake.query.username;
     const userColor = socket.handshake.query.color;
-    
+
     if (!username) {
         socket.disconnect();
         return;
     }
-    
+
     // Store user color if provided
     if (userColor) {
         userColors[username] = userColor;
         saveUserColors();
     }
-    
+
     // Add user to online users
     onlineUsers.add(username);
-    
+
     // Log user connection
     console.log(`User connected: ${username} with socket ID: ${socket.id}`);
-    
+
+    // Initialize user data with DND status
+    users[socket.id] = {
+        username: username,
+        dnd: false
+    };
+
     // Handle user join
     socket.on('user_join', (data) => {
         // Broadcast user join to all clients
@@ -103,18 +110,18 @@ io.on('connection', (socket) => {
             users: Array.from(onlineUsers),
             userColors: userColors // Send all user colors
         });
-        
+
         // Add system message to chat history
         const joinMessage = {
             type: 'system',
             message: `${data.username} has joined the chat`,
             timestamp: new Date().toISOString()
         };
-        
+
         chatMessages.push(joinMessage);
         saveMessages();
     });
-    
+
     // Handle chat message
     socket.on('chat_message', (data) => {
         const messageData = {
@@ -124,25 +131,25 @@ io.on('connection', (socket) => {
             timestamp: new Date().toISOString(),
             color: userColors[username] // Include the user's color with the message
         };
-        
+
         // Add message to chat history
         chatMessages.push(messageData);
         saveMessages();
-        
+
         // Broadcast message to all clients
         io.emit('chat_message', messageData);
     });
-    
+
     // Handle message history request
     socket.on('load_messages', (data) => {
         const page = data.page || 1;
         const pageSize = 20;
         const start = Math.max(0, chatMessages.length - (page * pageSize));
         const end = Math.max(0, chatMessages.length - ((page - 1) * pageSize));
-        
+
         // Get messages for the requested page
         const messages = chatMessages.slice(start, end).reverse();
-        
+
         // Send messages to the client
         socket.emit('chat_history', {
             messages,
@@ -151,44 +158,55 @@ io.on('connection', (socket) => {
             userColors: userColors // Send all user colors
         });
     });
-    
+
     // Handle user color update
     socket.on('update_color', (data) => {
         if (data.color) {
             userColors[username] = data.color;
             saveUserColors();
-            
+
             // Broadcast the updated colors to all clients
             io.emit('update_colors', {
                 userColors: userColors
             });
         }
     });
-    
+
+    // Handle DND toggle event
+    socket.on('dnd_toggle', (dndStatus) => {
+        users[socket.id].dnd = dndStatus;
+        io.emit('update_users', { users: Object.values(users) });
+    });
+
+    // Send updated user list on connection and disconnect.
+    io.emit('update_users', { users: Object.values(users) });
+
     // Handle disconnect
     socket.on('disconnect', () => {
         // Remove user from online users
         onlineUsers.delete(username);
-        
+
         // Log user disconnection
         console.log(`User disconnected: ${username}`);
-        
+
         // Add system message to chat history
         const leaveMessage = {
             type: 'system',
             message: `${username} has left the chat`,
             timestamp: new Date().toISOString()
         };
-        
+
         chatMessages.push(leaveMessage);
         saveMessages();
-        
+
         // Broadcast user leave to all clients
         io.emit('user_leave', {
             username: username,
             users: Array.from(onlineUsers),
             userColors: userColors // Send updated user colors
         });
+
+        io.emit('update_users', { users: Object.values(users) });
     });
 });
 
