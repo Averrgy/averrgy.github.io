@@ -414,6 +414,58 @@
             .load-more-container {
                 padding: 0.5rem 1rem;
             }
+
+            .upload-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 40px;
+                height: 40px;
+                background-color: #333;
+                border-radius: 4px;
+                margin-left: 0.5rem;
+                cursor: pointer;
+                transition: background-color 0.3s;
+            }
+            
+            .upload-btn:hover {
+                background-color: #555;
+            }
+            
+            .upload-icon {
+                font-size: 1.2rem;
+            }
+            
+            .image-preview {
+                max-width: 200px;
+                max-height: 200px;
+                margin-top: 10px;
+                border-radius: 4px;
+            }
+            
+            .message-image {
+                max-width: 300px;
+                max-height: 300px;
+                border-radius: 4px;
+                margin-top: 10px;
+                cursor: pointer;
+            }
+            
+            .image-loader {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 2px solid #f3f3f3;
+                border-radius: 50%;
+                border-top: 2px solid #3498db;
+                animation: spin 1s linear infinite;
+                margin-left: 5px;
+            }
+            
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
         }
     </style>
 </head>
@@ -456,7 +508,11 @@
                 <!-- Messages will be added here -->
             </div>
             <form class="chat-form" id="chat-form">
-                <input type="text" class="chat-input" id="chat-input" placeholder="Type your message..." required autocomplete="off">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Type your message..." autocomplete="off">
+                <label for="image-upload" class="upload-btn">
+                    <span class="upload-icon">📷</span>
+                </label>
+                <input type="file" id="image-upload" accept="image/*" style="display: none;">
                 <button type="submit" class="chat-button">Send</button>
             </form>
         </div>
@@ -488,6 +544,8 @@
         let currentPage = 1;
         let isLoading = false;
         let lastMessageSender = null; // Track the last message sender
+        let selectedImage = null;
+        let isUploading = false;
         
         // DOM elements
         const chatMessages = document.getElementById('chat-messages');
@@ -570,6 +628,101 @@
                     color: selectedColor
                 }
             });
+            // Add this at the end of your initializeChat function
+            setupImageUpload();
+
+            function setupImageUpload() {
+                const imageUpload = document.getElementById('image-upload');
+                const chatForm = document.getElementById('chat-form');
+                
+                // Handle image selection
+                imageUpload.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    // Check if file is an image
+                    if (!file.type.startsWith('image/')) {
+                        alert('Please select an image file.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Check file size (5MB max)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Please select an image smaller than 5MB.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Store the selected file
+                    selectedImage = file;
+                    
+                    // Notify user that an image is ready to send
+                    chatInput.placeholder = `Image "${file.name}" selected. Type a message (optional) and press send.`;
+                });
+                
+                // Modify form submission to handle images
+                chatForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const message = chatInput.value.trim();
+                    
+                    // If no message and no image, do nothing
+                    if (!message && !selectedImage) return;
+                    
+                    if (socket && !isUploading) {
+                        // If there's an image, upload it first
+                        if (selectedImage) {
+                            isUploading = true;
+                            
+                            // Show upload indicator
+                            const loader = document.createElement('div');
+                            loader.className = 'image-loader';
+                            chatForm.appendChild(loader);
+                            
+                            // Create form data for the upload
+                            const formData = new FormData();
+                            formData.append('image', selectedImage);
+                            
+                            try {
+                                // Upload the image
+                                const response = await fetch('/upload', {
+                                    method: 'POST',
+                                    body: formData
+                                });
+                                
+                                const result = await response.json();
+                                
+                                if (result.success) {
+                                    // Send message with image path
+                                    socket.emit('chat_message', { 
+                                        message: message,
+                                        image: result.filePath
+                                    });
+                                } else {
+                                    alert('Failed to upload image: ' + result.message);
+                                }
+                            } catch (error) {
+                                console.error('Upload error:', error);
+                                alert('Error uploading image. Please try again.');
+                            } finally {
+                                // Clean up
+                                isUploading = false;
+                                selectedImage = null;
+                                chatInput.placeholder = 'Type your message...';
+                                if (loader) chatForm.removeChild(loader);
+                            }
+                        } else {
+                            // Send text message only
+                            socket.emit('chat_message', { message });
+                        }
+                        
+                        // Clear input
+                        chatInput.value = '';
+                        document.getElementById('image-upload').value = '';
+                        chatInput.focus();
+                    }
+                });
+            }
             
             // Socket events
             socket.on('connect', () => {
@@ -589,7 +742,7 @@
             });
             
             socket.on('chat_message', (data) => {
-                displayMessage(data.username, data.message, data.timestamp, data.color);
+                displayMessage(data.username, data.message, data.timestamp, data.color, data.image);
             });
             
             socket.on('chat_history', (data) => {
@@ -629,7 +782,8 @@
                         
                         // Use the color from the message if available, otherwise from userColors
                         const messageColor = msg.color || userColors[msg.username];
-                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation, messageColor);
+                        // Pass the image if available
+                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation, messageColor, msg.image);
                         messagesArray.push(messageDiv);
                     }
                 });
@@ -840,7 +994,113 @@
         });
         
         // Create message element with username side by side with message
-        function createMessageElement(sender, message, timestamp, isContinuation = false, color) {
+        function setupImageUpload() {
+            const imageUpload = document.getElementById('image-upload');
+            const chatForm = document.getElementById('chat-form');
+            
+            // Handle image selection
+            imageUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                // Check if file is an image
+                if (!file.type.startsWith('image/')) {
+                    alert('Please select an image file.');
+                    this.value = '';
+                    return;
+                }
+                
+                // Check file size (5MB max)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Please select an image smaller than 5MB.');
+                    this.value = '';
+                    return;
+                }
+                
+                // Store the selected file
+                selectedImage = file;
+                
+                // Notify user that an image is ready to send
+                chatInput.placeholder = `Image "${file.name}" selected. Type a message (optional) and press send.`;
+            });
+            
+            // Modify form submission to handle images
+            chatForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const message = chatInput.value.trim();
+                
+                // If no message and no image, do nothing
+                if (!message && !selectedImage) return;
+                
+                if (socket && !isUploading) {
+                    // If there's an image, upload it first
+                    if (selectedImage) {
+                        isUploading = true;
+                        
+                        // Show upload indicator
+                        const loader = document.createElement('div');
+                        loader.className = 'image-loader';
+                        chatForm.appendChild(loader);
+                        
+                        // Create form data for the upload
+                        const formData = new FormData();
+                        formData.append('image', selectedImage);
+                        
+                        try {
+                            // Upload the image
+                            const response = await fetch('/upload', {
+                                method: 'POST',
+                                body: formData
+                            });
+                            
+                            const result = await response.json();
+                            
+                            if (result.success) {
+                                // Send message with image path
+                                socket.emit('chat_message', { 
+                                    message: message,
+                                    image: result.filePath
+                                });
+                            } else {
+                                alert('Failed to upload image: ' + result.message);
+                            }
+                        } catch (error) {
+                            console.error('Upload error:', error);
+                            alert('Error uploading image. Please try again.');
+                        } finally {
+                            // Clean up
+                            isUploading = false;
+                            selectedImage = null;
+                            chatInput.placeholder = 'Type your message...';
+                            if (loader) chatForm.removeChild(loader);
+                        }
+                    } else {
+                        // Send text message only
+                        socket.emit('chat_message', { message });
+                    }
+                    
+                    // Clear input
+                    chatInput.value = '';
+                    document.getElementById('image-upload').value = '';
+                    chatInput.focus();
+                }
+            });
+        }
+        
+        // Display message in the chat
+        function displayMessage(sender, message, timestamp, color) {
+            const isContinuation = (sender === lastMessageSender);
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
+            
+            chatMessages.appendChild(messageDiv);
+            lastMessageSender = sender;
+            
+            // Always scroll to bottom for new messages
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Create system message element
+        function createMessageElement(sender, message, timestamp, isContinuation = false, color, image = null) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
             
@@ -877,7 +1137,28 @@
             // Create message content
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
-            messageContent.textContent = message;
+            
+            // Add text message if present
+            if (message && message.length > 0) {
+                messageContent.textContent = message;
+            }
+            
+            // Add image if present
+            if (image) {
+                const imgElement = document.createElement('img');
+                imgElement.src = image;
+                imgElement.className = 'message-image';
+                imgElement.alt = 'Shared image';
+                
+                // Add click event to open image in new tab
+                imgElement.addEventListener('click', function() {
+                    window.open(image, '_blank');
+                });
+                
+                // Add image below the text message
+                messageContent.appendChild(document.createElement('br'));
+                messageContent.appendChild(imgElement);
+            }
             
             // Apply message color for the actual content
             if (color) {
@@ -887,32 +1168,6 @@
             }
             
             messageDiv.appendChild(messageContent);
-            
-            return messageDiv;
-        }
-        
-        // Display message in the chat
-        function displayMessage(sender, message, timestamp, color) {
-            const isContinuation = (sender === lastMessageSender);
-            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
-            
-            chatMessages.appendChild(messageDiv);
-            lastMessageSender = sender;
-            
-            // Always scroll to bottom for new messages
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        // Create system message element
-        function createSystemMessageElement(message, timestamp) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'system-message';
-            
-            if (timestamp) {
-                messageDiv.textContent = `${message} (${formatTimestamp(timestamp)})`;
-            } else {
-                messageDiv.textContent = message;
-            }
             
             return messageDiv;
         }
@@ -997,22 +1252,23 @@
         }
     
         // Replace your existing displayMessage function with this modified version:
-        function displayMessage(sender, message, timestamp, color) {
+        function displayMessage(sender, message, timestamp, color, image = null) {
             const isContinuation = (sender === lastMessageSender);
-            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
-    
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color, image);
+            
             chatMessages.appendChild(messageDiv);
             lastMessageSender = sender;
-    
+            
+            // Always scroll to bottom for new messages
             chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+            
             if (sender !== username) {
                 if (!isTabActive()) {
                     playNotificationSound();
-    
+                    
                     if ('Notification' in window && Notification.permission === 'granted') {
                         new Notification('New Message from ' + sender, {
-                            body: message,
+                            body: image ? 'Sent an image' + (message ? ': ' + message : '') : message,
                             icon: 'icon.png'
                         });
                     }
