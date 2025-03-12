@@ -629,35 +629,7 @@
                 }
             });
 
-            function setupImageUpload() {
-                const imageUpload = document.getElementById('image-upload');
-                const chatForm = document.getElementById('chat-form');
-                
-                // Handle image selection
-                imageUpload.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    
-                    // Check if file is an image
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file.');
-                        this.value = '';
-                        return;
-                    }
-                    
-                    // Check file size (5MB max)
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert('Please select an image smaller than 5MB.');
-                        this.value = '';
-                        return;
-                    }
-                    
-                    // Store the selected file
-                    selectedImage = file;
-                    
-                    // Notify user that an image is ready to send
-                    chatInput.placeholder = `Image "${file.name}" selected. Type a message (optional) and press send.`;
-                });
+        setupImageUpload();
                 
                 // Modify form submission to handle images
                 chatForm.addEventListener('submit', async function(e) {
@@ -781,8 +753,7 @@
                         // Use the color from the message if available, otherwise from userColors
                         const messageColor = msg.color || userColors[msg.username];
                         // Pass the image if available
-                        const messageDiv = Element(msg.username, msg.message, msg.timestamp, isContinuation, messageColor, msg.image);
-                        messagesArray.push(messageDiv);
+                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation, messageColor, msg.image);
                     }
                 });
                 
@@ -1285,7 +1256,7 @@
         // Replace your existing displayMessage function with this modified version:
         function displayMessage(sender, message, timestamp, color, image = null) {
             const isContinuation = (sender === lastMessageSender);
-            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color, image);
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
             
             // Apply color to message content
             const contentEl = messageDiv.querySelector('.message-content');
