@@ -147,19 +147,19 @@
             max-width: 100%;
             word-wrap: break-word;
             display: flex;
-            --sender-offset: 1; /* Initialize the offset */
+            --sender-offset: 0ch; /* Initialize to 0 */
         }
 
         .message-sender {
             font-weight: bold;
             margin-right: 0rem;
             white-space: nowrap;
-            --sender-offset: calc(100% + 0.5rem); /* Add sender width + margin */
+            --sender-offset: calc(var(--sender-offset) + attr(data-sender-length) ch + 1ch);
         }
 
         .message-separator {
             margin: 0 0.5rem;
-            --sender-offset: calc(var(--sender-offset) + 100% + 1rem); /* Add separator width + margins */
+            --sender-offset: calc(var(--sender-offset) + 3ch); /* Adjust as needed */
         }
 
         .message-content {
@@ -181,7 +181,7 @@
         }
         
         .continued-message {
-            margin-left: calc(var(--sender-offset) + 100% + 1rem);
+            margin-left: calc(var(--sender-offset) + 1rem); /* Simplified, no need for 100% */
             border-left: 0.5px solid #333;
             margin-bottom: 0.5rem;
             margin-top: 0.5rem;
@@ -803,61 +803,62 @@
         
         // Create message element with username side by side with message
         function createMessageElement(sender, message, timestamp, isContinuation = false, color) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message';
-            
-            if (!isContinuation) {
-                // Create message info section (username + timestamp)
-                const messageInfo = document.createElement('div');
-                messageInfo.className = 'message-info';
-                
-                // Create sender element
-                const senderElement = document.createElement('span');
-                senderElement.className = 'message-sender';
-                senderElement.setAttribute('data-sender', sender);
-                senderElement.textContent = sender;
-                
-                // Apply username color
-                if (color) {
-                    senderElement.style.color = color;
-                } else if (userColors[sender]) {
-                    senderElement.style.color = userColors[sender];
-                }
-                
-                // Add separator
-                const separatorElement = document.createElement('span');
-                separatorElement.className = 'message-separator';
-                separatorElement.textContent = '~';
-                
-                // Add timestamp
-                const timestampElement = document.createElement('span');
-                timestampElement.className = 'timestamp';
-                timestampElement.textContent = formatTimestamp(timestamp);
-                
-                // Assemble message info
-                messageInfo.appendChild(senderElement);
-                messageInfo.appendChild(separatorElement);
-                messageDiv.appendChild(messageInfo);
-            } else {
-                messageDiv.className = 'message continued-message';
-            }
-            
-            // Create message content
-            const messageContent = document.createElement('div');
-            messageContent.className = 'message-content';
-            messageContent.textContent = message;
-            
-            // Apply message color for the actual content
-            if (color) {
-                messageContent.style.color = color;
-            } else if (userColors[sender]) {
-                messageContent.style.color = userColors[sender];
-            }
-            
-            messageDiv.appendChild(messageContent);
-            
-            return messageDiv;
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message';
+
+    if (!isContinuation) {
+        // Create message info section (username + timestamp)
+        const messageInfo = document.createElement('div');
+        messageInfo.className = 'message-info';
+
+        // Create sender element
+        const senderElement = document.createElement('span');
+        senderElement.className = 'message-sender';
+        senderElement.setAttribute('data-sender', sender);
+        senderElement.setAttribute('data-sender-length', sender.length); // Add this line
+        senderElement.textContent = sender;
+
+        // Apply username color
+        if (color) {
+            senderElement.style.color = color;
+        } else if (userColors[sender]) {
+            senderElement.style.color = userColors[sender];
         }
+
+        // Add separator
+        const separatorElement = document.createElement('span');
+        separatorElement.className = 'message-separator';
+        separatorElement.textContent = '~';
+
+        // Add timestamp
+        const timestampElement = document.createElement('span');
+        timestampElement.className = 'timestamp';
+        timestampElement.textContent = formatTimestamp(timestamp);
+
+        // Assemble message info
+        messageInfo.appendChild(senderElement);
+        messageInfo.appendChild(separatorElement);
+        messageDiv.appendChild(messageInfo);
+    } else {
+        messageDiv.className = 'message continued-message';
+    }
+
+    // Create message content
+    const messageContent = document.createElement('div');
+    messageContent.className = 'message-content';
+    messageContent.textContent = message;
+
+    // Apply message color for the actual content
+    if (color) {
+        messageContent.style.color = color;
+    } else if (userColors[sender]) {
+        messageContent.style.color = userColors[sender];
+    }
+
+    messageDiv.appendChild(messageContent);
+
+    return messageDiv;
+    }
         
         // Display message in the chat
         function displayMessage(sender, message, timestamp, color) {
