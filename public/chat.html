@@ -961,6 +961,17 @@
                                 }
                             });
                             
+                            // Check if response is OK
+                            if (!response.ok) {
+                                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                            }
+                            
+                            // Check content type before parsing JSON
+                            const contentType = response.headers.get('content-type');
+                            if (!contentType || !contentType.includes('application/json')) {
+                                throw new Error('Server did not return JSON');
+                            }
+                            
                             const result = await response.json();
                             
                             if (result.success) {
@@ -970,7 +981,7 @@
                                     image: result.filePath
                                 });
                             } else {
-                                alert('Failed to upload image: ' + result.message);
+                                alert('Failed to upload image: ' + (result.message || 'Unknown error'));
                             }
                         } catch (error) {
                             console.error('Upload error:', error);
