@@ -247,9 +247,7 @@
         }
         
         .user-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 0.5rem;
+            margin-right: 10px;
         }
         
         .user-status {
@@ -396,11 +394,15 @@
             
             .user-list {
                 width: 100%;
-                min-height: 150px;
+                min-height: auto;
+                max-height: 100px;
+                overflow-y: auto;
             }
             
             .online-users {
-                max-height: 100px;
+                max-height: 70px;
+                display: flex;
+                flex-wrap: wrap;
             }
             
             .message-info {
@@ -414,6 +416,7 @@
             .load-more-container {
                 padding: 0.5rem 1rem;
             }
+        }
 
             .upload-btn {
                 display: flex;
@@ -546,6 +549,7 @@
         let lastMessageSender = null; // Track the last message sender
         let selectedImage = null;
         let isUploading = false;
+        let isDndEnabled = false;  // Initialize here
         
         // DOM elements
         const chatMessages = document.getElementById('chat-messages');
@@ -626,9 +630,13 @@
                 query: {
                     username,
                     color: selectedColor
-                }
+                },
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000
             });
-
+            
         setupImageUpload();
                 
                 // Modify form submission to handle images
@@ -657,7 +665,11 @@
                                 // Upload the image
                                 const response = await fetch('/upload', {
                                     method: 'POST',
-                                    body: formData
+                                    body: formData,
+                                    credentials: 'same-origin',
+                                    headers: {
+                                        'X-Requested-With': 'XMLHttpRequest',
+                                    }
                                 });
                                 
                                 const result = await response.json();
@@ -673,6 +685,15 @@
                                 }
                             } catch (error) {
                                 console.error('Upload error:', error);
+                                let errorMessage = 'Error uploading image.';
+                                if (error.message) {
+                                    errorMessage += ' ' + error.message;
+                                }
+                                if (!navigator.onLine) {
+                                    errorMessage = 'You appear to be offline. Please check your connection.';
+                                }
+                                alert(errorMessage);
+                            }
                                 alert('Error uploading image. Please try again.');
                             } finally {
                                 // Clean up
@@ -919,19 +940,20 @@
         
         // Update displayed colors for existing messages
         function updateDisplayedColors() {
-            const senderElements = document.querySelectorAll('.message-sender');
-            senderElements.forEach(el => {
-                const sender = el.getAttribute('data-sender');
+            const messageElements = document.querySelectorAll('.message');
+            messageElements.forEach(messageDiv => {
+                const senderEl = messageDiv.querySelector('.message-sender');
+                if (!senderEl) return;
+                
+                const sender = senderEl.getAttribute('data-sender');
                 if (userColors[sender]) {
-                    el.style.color = userColors[sender];
+                    // Update sender color
+                    senderEl.style.color = userColors[sender];
                     
-                    // Find the closest message content and update its color
-                    const messageDiv = el.closest('.message');
-                    if (messageDiv) {
-                        const contentEl = messageDiv.querySelector('.message-content');
-                        if (contentEl) {
-                            contentEl.style.color = userColors[sender];
-                        }
+                    // Update message content color
+                    const contentEl = messageDiv.querySelector('.message-content');
+                    if (contentEl) {
+                        contentEl.style.color = userColors[sender];
                     }
                 }
             });
@@ -1059,7 +1081,8 @@
         // Display message in the chat
         function displayMessage(sender, message, timestamp, color) {
             const isContinuation = (sender === lastMessageSender);
-            const messageDiv = Element(sender, message, timestamp, isContinuation, color);
+            // Replace Element with createMessageElement
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
             
             chatMessages.appendChild(messageDiv);
             lastMessageSender = sender;
@@ -1229,6 +1252,11 @@
         notificationSound.appendChild(mp3Source);
         notificationSound.appendChild(wavSource);
         document.body.appendChild(notificationSound);
+        
+        // Add error handling for audio
+        notificationSound.addEventListener('error', function() {
+            console.warn('Notification sound could not be loaded');
+        });
     
         function playNotificationSound() {
             console.log('playNotificationSound called, DND:', isDndEnabled);
@@ -1251,6 +1279,12 @@
         // Function to check if the tab is visible
         function isTabActive() {
             return !document.hidden;
+        }
+
+        function sanitizeHTML(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     
         // Replace your existing displayMessage function with this modified version:
