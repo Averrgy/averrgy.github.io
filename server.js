@@ -10,7 +10,7 @@ const fsExtra = require('fs-extra');
 // Create Express app
 const app = express();
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from 'public'
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -25,7 +25,7 @@ const io = socketIo(server, {
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, path.join(__dirname, 'public', 'uploads'));
+        cb(null, path.join(__dirname, 'public', 'uploads')); // Save to 'public/uploads'
     },
     filename: function (req, file, cb) {
         const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -47,6 +47,26 @@ const upload = multer({
     fileFilter: fileFilter,
     limits: {
         fileSize: 5 * 1024 * 1024 // 5MB max file size
+    }
+});
+
+// ... (rest of your server.js code remains the same)
+
+app.post('/upload', upload.single('image'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'No file uploaded' });
+        }
+
+        const filePath = `/uploads/${req.file.filename}`; // Correct relative path
+
+        return res.status(200).json({
+            success: true,
+            filePath: filePath
+        });
+    } catch (error) {
+        console.error('Upload error:', error);
+        return res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
