@@ -381,6 +381,12 @@
         .settings-button:hover {
             background-color: #333;
         }
+
+        .dnd-toggle-container {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -419,9 +425,6 @@
                 <li><a href="index.html">homepage</a></li>
                 <li><a href="chat.html">hatchat</a></li>
                 <li><a href="settings.html">settings</a></li>
-                <li><label>
-                    <input type="checkbox" id="dnd-toggle"> Do Not Disturb
-                </label></li>
             </ul>
         </nav>
     </header>
@@ -432,6 +435,11 @@
     
     <div class="main-content">
         <div class="user-list">
+            <div class="dnd-toggle-container">
+                <label>
+                    <input type="checkbox" id="dnd-toggle"> Do Not Disturb
+                </label>
+            </div>
             <h3>fellow hattingtons</h3>
             <div class="online-users" id="online-users">
                 <!-- Online users will be added here -->
@@ -924,18 +932,25 @@
             onlineUsers.innerHTML = '';
             
             users.forEach(user => {
+                // Check if the user is a simple string (old format) or an object with DND status
+                const isObject = typeof user === 'object';
+                const username = isObject ? user.username : user;
+                const isDnd = isObject ? user.dnd : false;
+                
                 const userItem = document.createElement('div');
                 userItem.className = 'user-item';
                 
                 const userStatus = document.createElement('div');
                 userStatus.className = 'user-status';
+                // Set status color based on DND
+                userStatus.style.backgroundColor = isDnd ? '#ff6b6b' : '#4CAF50';
                 
                 const userName = document.createElement('span');
-                userName.textContent = user === username ? `${user} (You)` : user;
+                userName.textContent = username === window.username ? `${username} (You)` : username;
                 
                 // Apply username color from server's userColors
-                if (userColors[user]) {
-                    userName.style.color = userColors[user];
+                if (userColors[username]) {
+                    userName.style.color = userColors[username];
                 }
                 
                 userItem.appendChild(userStatus);
@@ -1016,6 +1031,11 @@
     
         dndToggle.addEventListener('change', () => {
             isDndEnabled = dndToggle.checked;
+            
+            // Notify the server about the DND status change
+            if (socket) {
+                socket.emit('dnd_toggle', isDndEnabled);
+            }
         });
     
     </script>
