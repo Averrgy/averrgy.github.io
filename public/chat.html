@@ -248,6 +248,9 @@
         
         .user-item {
             margin-right: 10px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
         }
         
         .user-status {
@@ -949,7 +952,7 @@
                         
                         try {
                             // Upload the image
-                            const response = await fetch('/upload', {
+                            const response = await fetch('https://averrgy-github-io.onrender.com/upload', {
                                 method: 'POST',
                                 body: formData,
                                 credentials: 'same-origin',
