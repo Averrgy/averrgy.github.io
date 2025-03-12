@@ -1227,19 +1227,6 @@
             // You could add logic here if you want to respond to the tab becoming active again.
         });
     
-        // Place the new code here:
-        const dndToggle = document.getElementById('dnd-toggle');
-        let isDndEnabled = false;
-    
-        dndToggle.addEventListener('change', () => {
-            isDndEnabled = dndToggle.checked;
-            
-            // Notify the server about the DND status change
-            if (socket) {
-                socket.emit('dnd_toggle', isDndEnabled);
-            }
-        });
-    
     </script>
 </body>
 </html>
