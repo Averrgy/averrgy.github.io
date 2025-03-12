@@ -107,7 +107,7 @@ io.on('connection', (socket) => {
         // Broadcast user join to all clients
         io.emit('user_join', {
             username: data.username,
-            users: Array.from(onlineUsers),
+            users: Object.values(users), // Send users with DND status
             userColors: userColors // Send all user colors
         });
 
@@ -185,6 +185,9 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         // Remove user from online users
         onlineUsers.delete(username);
+        
+        // Remove user from users object with DND status
+        delete users[socket.id];
 
         // Log user disconnection
         console.log(`User disconnected: ${username}`);
@@ -202,7 +205,7 @@ io.on('connection', (socket) => {
         // Broadcast user leave to all clients
         io.emit('user_leave', {
             username: username,
-            users: Array.from(onlineUsers),
+            users: Object.values(users), // Send updated users list with DND status
             userColors: userColors // Send updated user colors
         });
 
