@@ -683,17 +683,28 @@
             });
             
             socket.on('chat_message', (data) => {
-                const replyData = data.replyTo ? {
-                    messageId: data.replyTo.messageId,
-                    sender: data.replyTo.sender,
-                    message: data.replyTo.message
-                } : null;
-    
                 displayMessage(data.username, data.message, data.timestamp, data.color);
             });
             
             socket.on('chat_history', (data) => {
-    
+                loadingIndicator.style.display = 'none';
+                isLoading = false;
+                
+                // Update user colors from server
+                if (data.userColors) {
+                    userColors = data.userColors;
+                }
+                
+                if (currentPage === 1) {
+                    // Clear existing messages if this is the first page
+                    chatMessages.innerHTML = '';
+                    lastMessageSender = null; // Reset last sender
+                }
+                
+                // Create a temporary container for messages
+                const fragment = document.createDocumentFragment();
+                const messagesArray = [];
+                
                 // Process messages
                 data.messages.forEach((msg, index) => {
                     if (msg.type === 'system') {
@@ -707,19 +718,12 @@
                         // Skip continuity check for first page since we're showing newest messages
                         if (currentPage > 1 && index > 0) {
                             const prevMsg = data.messages[index - 1];
-                            isContinuation = prevMsg.type !== 'system' && prevMsg.username === msg.username && !msg.replyTo;
+                            isContinuation = prevMsg.type !== 'system' && prevMsg.username === msg.username;
                         }
-                        
-                        // Get reply data if this is a reply
-                        const replyData = msg.replyTo ? {
-                            messageId: msg.replyTo.messageId,
-                            sender: msg.replyTo.sender,
-                            message: msg.replyTo.message
-                        } : null;
                         
                         // Use the color from the message if available, otherwise from userColors
                         const messageColor = msg.color || userColors[msg.username];
-                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation, messageColor, replyData, msg.messageId);
+                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation, messageColor);
                         messagesArray.push(messageDiv);
                     }
                 });
