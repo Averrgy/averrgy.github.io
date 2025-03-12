@@ -152,7 +152,7 @@
         .message-info {
             font-size: 0.8rem;
             color: #aaa;
-            display: inline-block;
+            display: inline-block;, 
             vertical-align: top;
         }
 
@@ -275,6 +275,25 @@
             color: white;
             text-align: center;
             padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .settings-button {
+            padding: 0.3rem 0.8rem;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .settings-button:hover {
+            background-color: #555;
         }
         
         .modal {
@@ -388,11 +407,7 @@
         <nav>
             <ul>
                 <li><a href="index.html">homepage</a></li>
-                <li><a href="#">about</a></li>
-                <li><a href="#">services</a></li>
                 <li><a href="chat.html">hatchat</a></li>
-                <li><a href="settings.html">settings</a></li>
-                <li><a href="#">contact</a></li>
             </ul>
         </nav>
     </header>
@@ -425,21 +440,6 @@
         </div>
     </div>
     
-    <!-- Password Modal -->
-    <div class="modal" id="password-modal">
-        <div class="modal-content">
-            <h2>Enter Password</h2>
-            <form id="password-form">
-                <div class="form-group">
-                    <label for="password-input">Password:</label>
-                    <input type="password" class="form-input" id="password-input" required>
-                    <div class="error-message" id="password-error" style="display: none;">Incorrect password. Please try again.</div>
-                </div>
-                <button type="submit" class="form-button">Submit</button>
-            </form>
-        </div>
-    </div>
-    
     <!-- Username Modal -->
     <div class="modal" id="username-modal">
         <div class="modal-content">
@@ -459,6 +459,7 @@
     </div>
     
     <footer>
+        <a href="settings.html" class="settings-button" id="settings-button">Settings</a>
         <p>&copy; 2025 My Website. All rights reserved.</p>
     </footer>
     
@@ -479,10 +480,6 @@
         const usernameModal = document.getElementById('username-modal');
         const usernameForm = document.getElementById('username-form');
         const usernameInput = document.getElementById('username-input');
-        const passwordModal = document.getElementById('password-modal');
-        const passwordForm = document.getElementById('password-form');
-        const passwordInput = document.getElementById('password-input');
-        const passwordError = document.getElementById('password-error');
         const connectionStatus = document.getElementById('connection-status');
         const loadMoreBtn = document.getElementById('load-more-btn');
         const loadingIndicator = document.getElementById('loading-indicator');
@@ -492,54 +489,24 @@
         // Store user colors - now shared from server
         let userColors = {};
         
-        // Show password modal on page load
+        // Show username modal on page load or use stored username
         window.addEventListener('DOMContentLoaded', () => {
-            // Check if there's a stored password
-            const storedPassword = localStorage.getItem('chat_password');
+            const storedUsername = localStorage.getItem('chat_username');
+            const storedColor = localStorage.getItem('chat_color') || '#FFFFFF';
             
-            // If no stored password, use the default
-            const correctPassword = storedPassword || "hatty";
-            
-            // Show the password modal
-            passwordModal.style.display = 'flex';
-            
-            // Handle password form submission
-            passwordForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const enteredPassword = passwordInput.value.trim();
-                
-                if (enteredPassword === correctPassword) {
-                    // Password correct, check if username exists
-                    const storedUsername = localStorage.getItem('chat_username');
-                    const storedColor = localStorage.getItem('chat_color') || '#FFFFFF';
-                    
-                    if (storedUsername) {
-                        // Use stored username and color
-                        username = storedUsername;
-                        if (colorInput) {
-                            colorInput.value = storedColor;
-                        }
-                        
-                        // Close the password modal
-                        passwordModal.style.display = 'none';
-                        
-                        // Start the chat with stored values
-                        initializeChat(storedColor);
-                    } else {
-                        // Show username modal if no stored username
-                        passwordModal.style.display = 'none';
-                        usernameModal.style.display = 'flex';
-                    }
-                    
-                    passwordError.style.display = 'none';
-                } else {
-                    // Password incorrect, show error
-                    passwordError.style.display = 'block';
-                    passwordInput.value = '';
-                    passwordInput.focus();
+            if (storedUsername) {
+                // Use stored username and color
+                username = storedUsername;
+                if (colorInput) {
+                    colorInput.value = storedColor;
                 }
-            });
+                
+                // Start the chat with stored values
+                initializeChat(storedColor);
+            } else {
+                // Show username modal if no stored username
+                usernameModal.style.display = 'flex';
+            }
             
             // Handle settings button click
             if (settingsButton) {
@@ -968,8 +935,6 @@
                 onlineUsers.appendChild(userItem);
             });
         }
-
-        
     </script>
 </body>
 </html>
