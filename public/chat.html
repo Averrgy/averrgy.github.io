@@ -959,9 +959,12 @@
         document.body.appendChild(notificationSound);
     
         function playNotificationSound() {
-            notificationSound.currentTime = 0;
-            notificationSound.volume = 0.5; // Set volume to 50%
-            notificationSound.play();
+            console.log('playNotificationSound called, DND:', isDndEnabled);
+            if (!isDndEnabled) {
+                notificationSound.currentTime = 0;
+                notificationSound.volume = 0.5;
+                notificationSound.play();
+            }
         }
     
         // Check if the browser supports notifications
