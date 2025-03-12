@@ -419,6 +419,9 @@
                 <li><a href="index.html">homepage</a></li>
                 <li><a href="chat.html">hatchat</a></li>
                 <li><a href="settings.html">settings</a></li>
+                <li><label>
+                    <input type="checkbox" id="dnd-toggle"> Do Not Disturb
+                </label></li>
             </ul>
         </nav>
     </header>
@@ -943,67 +946,75 @@
         }
         
     // Notification sound setup
-    const notificationSound = document.createElement('audio');
-    notificationSound.id = 'notificationSound';
-    const mp3Source = document.createElement('source');
-    mp3Source.src = 'sounds/notif.mp3';
-    mp3Source.type = 'audio/mpeg';
-    const wavSource = document.createElement('source');
-    wavSource.src = 'sounds/notif.wav';
-    wavSource.type = 'audio/wav';
-    notificationSound.appendChild(mp3Source);
-    notificationSound.appendChild(wavSource);
-    document.body.appendChild(notificationSound);
+        const notificationSound = document.createElement('audio');
+        notificationSound.id = 'notificationSound';
+        const mp3Source = document.createElement('source');
+        mp3Source.src = 'sounds/notif.mp3';
+        mp3Source.type = 'audio/mpeg';
+        const wavSource = document.createElement('source');
+        wavSource.src = 'sounds/notif.wav';
+        wavSource.type = 'audio/wav';
+        notificationSound.appendChild(mp3Source);
+        notificationSound.appendChild(wavSource);
+        document.body.appendChild(notificationSound);
     
-    function playNotificationSound() {
-        notificationSound.currentTime = 0;
-        notificationSound.volume = 0.5; // Set volume to 50%
-        notificationSound.play();
-    }
+        function playNotificationSound() {
+            notificationSound.currentTime = 0;
+            notificationSound.volume = 0.5; // Set volume to 50%
+            notificationSound.play();
+        }
     
-    // Check if the browser supports notifications
-    if ('Notification' in window) {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                console.log('Notification permission granted.');
-            }
-        });
-    }
+        // Check if the browser supports notifications
+        if ('Notification' in window) {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    console.log('Notification permission granted.');
+                }
+            });
+        }
     
-    // Function to check if the tab is visible
-    function isTabActive() {
-        return !document.hidden;
-    }
+        // Function to check if the tab is visible
+        function isTabActive() {
+            return !document.hidden;
+        }
     
-    // Replace your existing displayMessage function with this modified version:
-    function displayMessage(sender, message, timestamp, color) {
-        const isContinuation = (sender === lastMessageSender);
-        const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
+        // Replace your existing displayMessage function with this modified version:
+        function displayMessage(sender, message, timestamp, color) {
+            const isContinuation = (sender === lastMessageSender);
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
     
-        chatMessages.appendChild(messageDiv);
-        lastMessageSender = sender;
+            chatMessages.appendChild(messageDiv);
+            lastMessageSender = sender;
     
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
     
-        if (sender !== username) {
-            if (!isTabActive()) {
-                playNotificationSound();
+            if (sender !== username) {
+                if (!isTabActive()) {
+                    playNotificationSound();
     
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('New Message from ' + sender, {
-                        body: message,
-                        icon: 'icon.png'
-                    });
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('New Message from ' + sender, {
+                            body: message,
+                            icon: 'icon.png'
+                        });
+                    }
                 }
             }
         }
-    }
     
-    // Add event listener for visibility changes
-    document.addEventListener('visibilitychange', function() {
-        // You could add logic here if you want to respond to the tab becoming active again.
-    });
-        
+        // Add event listener for visibility changes
+        document.addEventListener('visibilitychange', function() {
+            // You could add logic here if you want to respond to the tab becoming active again.
+        });
+    
+        // Place the new code here:
+        const dndToggle = document.getElementById('dnd-toggle');
+        let isDndEnabled = false;
+    
+        dndToggle.addEventListener('change', () => {
+            isDndEnabled = dndToggle.checked;
+        });
+    
     </script>
 </body>
 </html>
