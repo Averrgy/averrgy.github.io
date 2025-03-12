@@ -96,29 +96,23 @@ io.on('connection', (socket) => {
     console.log(`User connected: ${username} with socket ID: ${socket.id}`);
     
     // Handle user join
-    socket.on('chat_message', (data) => {
-        const messageId = Date.now().toString() + Math.floor(Math.random() * 1000);
+    socket.on('user_join', (data) => {
+        // Broadcast user join to all clients
+        io.emit('user_join', {
+            username: data.username,
+            users: Array.from(onlineUsers),
+            userColors: userColors // Send all user colors
+        });
         
-        const messageData = {
-            type: 'message',
-            messageId: messageId,
-            username: username,
-            message: data.message,
-            timestamp: new Date().toISOString(),
-            color: userColors[username]
+        // Add system message to chat history
+        const joinMessage = {
+            type: 'system',
+            message: `${data.username} has joined the chat`,
+            timestamp: new Date().toISOString()
         };
         
-        // Add reply data if this is a reply
-        if (data.replyTo) {
-            messageData.replyTo = data.replyTo;
-        }
-        
-        // Add message to chat history
-        chatMessages.push(messageData);
+        chatMessages.push(joinMessage);
         saveMessages();
-        
-        // Broadcast message to all clients
-        io.emit('chat_message', messageData);
     });
     
     // Handle chat message
