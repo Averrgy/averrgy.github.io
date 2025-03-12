@@ -942,6 +942,67 @@
             });
         }
         
+    // Notification sound setup
+    const notificationSound = document.createElement('audio');
+    notificationSound.id = 'notificationSound';
+    const mp3Source = document.createElement('source');
+    mp3Source.src = 'notification.mp3';
+    mp3Source.type = 'audio/mpeg';
+    const wavSource = document.createElement('source');
+    wavSource.src = 'notification.wav';
+    wavSource.type = 'audio/wav';
+    notificationSound.appendChild(mp3Source);
+    notificationSound.appendChild(wavSource);
+    document.body.appendChild(notificationSound);
+    
+    function playNotificationSound() {
+        notificationSound.currentTime = 0;
+        notificationSound.play();
+    }
+    
+    // Check if the browser supports notifications
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                console.log('Notification permission granted.');
+            }
+        });
+    }
+    
+    // Function to check if the tab is visible
+    function isTabActive() {
+        return !document.hidden;
+    }
+    
+    // Replace your existing displayMessage function with this modified version:
+    function displayMessage(sender, message, timestamp, color) {
+        const isContinuation = (sender === lastMessageSender);
+        const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
+    
+        chatMessages.appendChild(messageDiv);
+        lastMessageSender = sender;
+    
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+        if (sender !== username) {
+            if (!isTabActive()) {
+                playNotificationSound();
+    
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('New Message from ' + sender, {
+                        body: message,
+                        icon: 'icon.png'
+                    });
+                }
+            }
+        }
+    }
+    
+    // Add event listener for visibility changes
+    document.addEventListener('visibilitychange', function() {
+        // You could add logic here if you want to respond to the tab becoming active again.
+    });
+        
     </script>
 </body>
 </html>
