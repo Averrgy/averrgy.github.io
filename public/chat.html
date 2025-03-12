@@ -924,7 +924,7 @@
             const chatContainer = document.querySelector('.chat-container');
             if (!chatContainer) return;
             // Assuming 8 pixels per character (adjust as needed)
-            const usernameWidthPixels = username.length * 8;
+            const usernameWidthPixels = username.length * 64;
 
             // Convert to rems
             const usernameWidthRems = usernameWidthPixels / parseFloat(getComputedStyle(document.documentElement).fontSize);
