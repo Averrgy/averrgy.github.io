@@ -145,7 +145,7 @@
             padding: 0.3rem 0;
             max-width: 100%;
             word-wrap: break-word;
-            display: block;
+            display: flex;
             white-space: nowrap;
         }
         
@@ -155,10 +155,18 @@
             display: inline-block;
             vertical-align: top;
         }
+
+        .username-area {
+            width: 11ch; /* 8 characters for username + 3 for separator */
+            min-width: 11ch;
+            text-align: right;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
         
         .message-sender {
             font-weight: bold;
-            white-space: nowrap;
+            white-space: pre;
         }
 
         .message-separator {
@@ -170,6 +178,8 @@
             display: inline;
             word-break: break-word;
             white-space: normal;
+            flex: 1;
+            padding-left: 0.5rem;
         }
 
         .continued-message {
@@ -813,13 +823,11 @@
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
             
+            // Create username area (always 8 characters wide plus separator)
+            const usernameArea = document.createElement('div');
+            usernameArea.className = 'username-area';
+            
             if (!isContinuation) {
-                // Create message info section (username + separator)
-                const messageInfo = document.createElement('div');
-                messageInfo.className = 'message-info';
-                messageInfo.style.display = 'inline-block';
-                messageInfo.style.textAlign = 'right';
-                
                 // Create sender element
                 const senderElement = document.createElement('span');
                 senderElement.className = 'message-sender';
@@ -838,23 +846,16 @@
                 separatorElement.className = 'message-separator';
                 separatorElement.textContent = ' ~ ';
                 
-                // Assemble message info
-                messageInfo.appendChild(senderElement);
-                messageInfo.appendChild(separatorElement);
-                messageDiv.appendChild(messageInfo);
-            } else {
-                // For continued messages, create an invisible spacer that matches the width of username + separator
-                const spacer = document.createElement('span');
-                spacer.style.display = 'inline-block';
-                spacer.style.visibility = 'hidden';
-                spacer.textContent = lastMessageSender + ' ~ ';
-                messageDiv.appendChild(spacer);
+                // Assemble username area
+                usernameArea.appendChild(senderElement);
+                usernameArea.appendChild(separatorElement);
             }
+            
+            messageDiv.appendChild(usernameArea);
             
             // Create message content
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
-            messageContent.style.display = 'inline';
             messageContent.textContent = message;
             
             // Apply message color for the actual content
