@@ -110,7 +110,6 @@
             display: flex;
             flex-direction: column;
             height: 100%;
-             --sender-offset: 5rem;
         }
         
         .chat-header {
@@ -147,31 +146,29 @@
             max-width: 100%;
             word-wrap: break-word;
             display: flex;
-            --sender-offset: 0ch; /* Initialize to 0 */
         }
 
-        .message-sender {
-            font-weight: bold;
-            margin-right: 0rem;
-            white-space: nowrap;
-            --sender-offset: calc(var(--sender-offset) + attr(data-sender-length) ch + 1ch);
-        }
-
-        .message-separator {
-            margin: 0 0.5rem;
-            --sender-offset: calc(var(--sender-offset) + 3ch); /* Adjust as needed */
-        }
-
-        .message-content {
-            flex: 1;
-            word-break: break-word;
-        }
-        
         .message-info {
             font-size: 0.8rem;
             color: #aaa;
             display: flex;
             align-items: center;
+            min-width: 9rem; /* Fixed width for message info area */
+            margin-right: 0.5rem;
+        }
+        
+        .message-sender {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .message-separator {
+            margin: 0 0.5rem;
+        }
+
+        .message-content {
+            flex: 1;
+            word-break: break-word;
         }
         
         .timestamp {
@@ -181,10 +178,7 @@
         }
         
         .continued-message {
-            margin-left: calc(var(--sender-offset) + 2.8rem); /* Simplified, no need for 100% */
-            border-left: 0px solid #333;
-            margin-bottom: 0.5rem;
-            margin-top: 0.5rem;
+            padding-left: 9.5rem; /* Match the combined width of message-info + margin */
         }
         
         .system-message {
@@ -355,9 +349,13 @@
                 max-height: 100px;
             }
             
-            .chat-container {
-            --base-rem-length: 1rem; /* Set your base rem length here */
-        }
+            .message-info {
+                min-width: 7rem;
+            }
+            
+            .continued-message {
+                padding-left: 7.5rem;
+            }
             
             .load-more-container {
                 padding: 0.5rem 1rem;
@@ -803,62 +801,61 @@
         
         // Create message element with username side by side with message
         function createMessageElement(sender, message, timestamp, isContinuation = false, color) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message';
-
-    if (!isContinuation) {
-        // Create message info section (username + timestamp)
-        const messageInfo = document.createElement('div');
-        messageInfo.className = 'message-info';
-
-        // Create sender element
-        const senderElement = document.createElement('span');
-        senderElement.className = 'message-sender';
-        senderElement.setAttribute('data-sender', sender);
-        senderElement.setAttribute('data-sender-length', sender.length); // Add this line
-        senderElement.textContent = sender;
-
-        // Apply username color
-        if (color) {
-            senderElement.style.color = color;
-        } else if (userColors[sender]) {
-            senderElement.style.color = userColors[sender];
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            
+            if (!isContinuation) {
+                // Create message info section (username + timestamp)
+                const messageInfo = document.createElement('div');
+                messageInfo.className = 'message-info';
+                
+                // Create sender element
+                const senderElement = document.createElement('span');
+                senderElement.className = 'message-sender';
+                senderElement.setAttribute('data-sender', sender);
+                senderElement.textContent = sender;
+                
+                // Apply username color
+                if (color) {
+                    senderElement.style.color = color;
+                } else if (userColors[sender]) {
+                    senderElement.style.color = userColors[sender];
+                }
+                
+                // Add separator
+                const separatorElement = document.createElement('span');
+                separatorElement.className = 'message-separator';
+                separatorElement.textContent = '~';
+                
+                // Add timestamp
+                const timestampElement = document.createElement('span');
+                timestampElement.className = 'timestamp';
+                timestampElement.textContent = formatTimestamp(timestamp);
+                
+                // Assemble message info
+                messageInfo.appendChild(senderElement);
+                messageInfo.appendChild(separatorElement);
+                messageDiv.appendChild(messageInfo);
+            } else {
+                messageDiv.className = 'message continued-message';
+            }
+            
+            // Create message content
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageContent.textContent = message;
+            
+            // Apply message color for the actual content
+            if (color) {
+                messageContent.style.color = color;
+            } else if (userColors[sender]) {
+                messageContent.style.color = userColors[sender];
+            }
+            
+            messageDiv.appendChild(messageContent);
+            
+            return messageDiv;
         }
-
-        // Add separator
-        const separatorElement = document.createElement('span');
-        separatorElement.className = 'message-separator';
-        separatorElement.textContent = '~';
-
-        // Add timestamp
-        const timestampElement = document.createElement('span');
-        timestampElement.className = 'timestamp';
-        timestampElement.textContent = formatTimestamp(timestamp);
-
-        // Assemble message info
-        messageInfo.appendChild(senderElement);
-        messageInfo.appendChild(separatorElement);
-        messageDiv.appendChild(messageInfo);
-    } else {
-        messageDiv.className = 'message continued-message';
-    }
-
-    // Create message content
-    const messageContent = document.createElement('div');
-    messageContent.className = 'message-content';
-    messageContent.textContent = message;
-
-    // Apply message color for the actual content
-    if (color) {
-        messageContent.style.color = color;
-    } else if (userColors[sender]) {
-        messageContent.style.color = userColors[sender];
-    }
-
-    messageDiv.appendChild(messageContent);
-
-    return messageDiv;
-    }
         
         // Display message in the chat
         function displayMessage(sender, message, timestamp, color) {
@@ -921,19 +918,6 @@
                 onlineUsers.appendChild(userItem);
             });
         }
-        function setContinuedMessageMargin(username, baseRemLength) {
-            const chatContainer = document.querySelector('.chat-container');
-            if (!chatContainer) return;
-            // Assuming 8 pixels per character (adjust as needed)
-            const usernameWidthPixels = username.length * 8;
-
-            // Convert to rems
-            const usernameWidthRems = usernameWidthPixels / parseFloat(getComputedStyle(document.documentElement).fontSize);
-
-            // Set the CSS variable
-            chatContainer.style.setProperty('--sender-offset', `${usernameWidthRems + 5}rem`);
-        }
-        
     </script>
 </body>
 </html>
