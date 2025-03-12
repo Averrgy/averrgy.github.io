@@ -628,8 +628,6 @@
                     color: selectedColor
                 }
             });
-            // Add this at the end of your initializeChat function
-            setupImageUpload();
 
             function setupImageUpload() {
                 const imageUpload = document.getElementById('image-upload');
@@ -783,7 +781,7 @@
                         // Use the color from the message if available, otherwise from userColors
                         const messageColor = msg.color || userColors[msg.username];
                         // Pass the image if available
-                        const messageDiv = createMessageElement(msg.username, msg.message, msg.timestamp, isContinuation, messageColor, msg.image);
+                        const messageDiv = Element(msg.username, msg.message, msg.timestamp, isContinuation, messageColor, msg.image);
                         messagesArray.push(messageDiv);
                     }
                 });
@@ -895,7 +893,7 @@
             });
             
             socket.on('user_join', (data) => {
-                displaySystemMessage(`${data.username} has joined the chat`);
+                displaySystemMessage(`${data.username} has joined the chat`, new Date().toISOString());
                 
                 // Update user colors from server
                 if (data.userColors) {
@@ -906,7 +904,7 @@
             });
             
             socket.on('user_leave', (data) => {
-                displaySystemMessage(`${data.username} has left the chat`);
+                displaySystemMessage(`${data.username} has left the chat`, new Date().toISOString());
                 
                 // Update user colors from server
                 if (data.userColors) {
@@ -1090,7 +1088,7 @@
         // Display message in the chat
         function displayMessage(sender, message, timestamp, color) {
             const isContinuation = (sender === lastMessageSender);
-            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
+            const messageDiv = Element(sender, message, timestamp, isContinuation, color);
             
             chatMessages.appendChild(messageDiv);
             lastMessageSender = sender;
@@ -1137,6 +1135,13 @@
             // Create message content
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
+
+            if (!isContinuation && timestamp) {
+                const timestampElement = document.createElement('span');
+                timestampElement.className = 'timestamp';
+                timestampElement.textContent = formatTimestamp(timestamp);
+                messageContent.appendChild(timestampElement);
+            }
             
             // Add text message if present
             if (message && message.length > 0) {
@@ -1149,14 +1154,21 @@
                 imgElement.src = image;
                 imgElement.className = 'message-image';
                 imgElement.alt = 'Shared image';
+                imgElement.onerror = function() {
+                    imgElement.src = 'fallback-image.png'; // Create a fallback image
+                    imgElement.alt = 'Image failed to load';
+                };
                 
                 // Add click event to open image in new tab
                 imgElement.addEventListener('click', function() {
                     window.open(image, '_blank');
                 });
                 
-                // Add image below the text message
-                messageContent.appendChild(document.createElement('br'));
+                // If there's a text message, add line break before image
+                if (message && message.length > 0) {
+                    messageContent.appendChild(document.createElement('br'));
+                }
+                
                 messageContent.appendChild(imgElement);
             }
             
@@ -1180,6 +1192,24 @@
             
             // Always scroll to bottom for system messages
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function createSystemMessageElement(message, timestamp) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'system-message';
+            
+            // Add message text
+            messageDiv.textContent = message;
+            
+            // Add timestamp if available
+            if (timestamp) {
+                const timestampElement = document.createElement('span');
+                timestampElement.className = 'timestamp';
+                timestampElement.textContent = formatTimestamp(timestamp);
+                messageDiv.appendChild(timestampElement);
+            }
+            
+            return messageDiv;
         }
         
         // Update online users list
@@ -1207,6 +1237,7 @@
                 if (userColors[username]) {
                     userName.style.color = userColors[username];
                 }
+
                 
                 userItem.appendChild(userStatus);
                 userItem.appendChild(userName);
@@ -1255,6 +1286,12 @@
         function displayMessage(sender, message, timestamp, color, image = null) {
             const isContinuation = (sender === lastMessageSender);
             const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color, image);
+            
+            // Apply color to message content
+            const contentEl = messageDiv.querySelector('.message-content');
+            if (contentEl && color) {
+                contentEl.style.color = color;
+            }
             
             chatMessages.appendChild(messageDiv);
             lastMessageSender = sender;
