@@ -391,6 +391,7 @@
                 <li><a href="#">about</a></li>
                 <li><a href="#">services</a></li>
                 <li><a href="chat.html">hatchat</a></li>
+                <li><a href="settings.html">settings</a></li>
                 <li><a href="#">contact</a></li>
             </ul>
         </nav>
@@ -470,9 +471,6 @@
         let isLoading = false;
         let lastMessageSender = null; // Track the last message sender
         
-        // Set the password here - CHANGE THIS TO YOUR DESIRED PASSWORD
-        const correctPassword = "hatty";
-        
         // DOM elements
         const chatMessages = document.getElementById('chat-messages');
         const chatForm = document.getElementById('chat-form');
@@ -488,31 +486,66 @@
         const connectionStatus = document.getElementById('connection-status');
         const loadMoreBtn = document.getElementById('load-more-btn');
         const loadingIndicator = document.getElementById('loading-indicator');
+        const colorInput = document.getElementById('color-input');
+        const settingsButton = document.getElementById('settings-button');
         
         // Store user colors - now shared from server
         let userColors = {};
         
         // Show password modal on page load
         window.addEventListener('DOMContentLoaded', () => {
+            // Check if there's a stored password
+            const storedPassword = localStorage.getItem('chat_password');
+            
+            // If no stored password, use the default
+            const correctPassword = storedPassword || "hatty";
+            
+            // Show the password modal
             passwordModal.style.display = 'flex';
-        });
-        
-        // Handle password submission
-        passwordForm.addEventListener('submit', (e) => {
-            e.preventDefault();
             
-            const enteredPassword = passwordInput.value.trim();
+            // Handle password form submission
+            passwordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const enteredPassword = passwordInput.value.trim();
+                
+                if (enteredPassword === correctPassword) {
+                    // Password correct, check if username exists
+                    const storedUsername = localStorage.getItem('chat_username');
+                    const storedColor = localStorage.getItem('chat_color') || '#FFFFFF';
+                    
+                    if (storedUsername) {
+                        // Use stored username and color
+                        username = storedUsername;
+                        if (colorInput) {
+                            colorInput.value = storedColor;
+                        }
+                        
+                        // Close the password modal
+                        passwordModal.style.display = 'none';
+                        
+                        // Start the chat with stored values
+                        initializeChat(storedColor);
+                    } else {
+                        // Show username modal if no stored username
+                        passwordModal.style.display = 'none';
+                        usernameModal.style.display = 'flex';
+                    }
+                    
+                    passwordError.style.display = 'none';
+                } else {
+                    // Password incorrect, show error
+                    passwordError.style.display = 'block';
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            });
             
-            if (enteredPassword === correctPassword) {
-                // Password correct, proceed to username
-                passwordModal.style.display = 'none';
-                usernameModal.style.display = 'flex';
-                passwordError.style.display = 'none';
-            } else {
-                // Password incorrect, show error
-                passwordError.style.display = 'block';
-                passwordInput.value = '';
-                passwordInput.focus();
+            // Handle settings button click
+            if (settingsButton) {
+                settingsButton.addEventListener('click', () => {
+                    window.location.href = 'settings.html';
+                });
             }
         });
         
@@ -530,6 +563,10 @@
             username = enteredUsername;
             
             if (username) {
+                // Store username and color in localStorage
+                localStorage.setItem('chat_username', username);
+                localStorage.setItem('chat_color', selectedColor);
+                
                 usernameModal.style.display = 'none';
                 initializeChat(selectedColor);
             }
@@ -931,6 +968,8 @@
                 onlineUsers.appendChild(userItem);
             });
         }
+
+        
     </script>
 </body>
 </html>
