@@ -409,111 +409,6 @@
                 padding: 0.5rem 1rem;
             }
         }
-
-         /* Context menu for right-click */
-        .context-menu {
-            display: none;
-            position: absolute;
-            background-color: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            z-index: 100;
-        }
-        
-        .context-menu-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        
-        .context-menu-item:hover {
-            background-color: #333;
-        }
-        
-        /* Reply styling */
-        .reply-container {
-            margin-bottom: 4px;
-            padding: 4px 8px;
-            background-color: #2a2a2a;
-            border-left: 2px solid #555;
-            border-radius: 2px;
-            font-size: 0.8rem;
-            color: #aaa;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-        }
-        
-        .reply-to {
-            font-weight: bold;
-            color: #bbb;
-        }
-        
-        /* Highlight the message being replied to */
-        .highlighted-message {
-            background-color: rgba(255, 255, 255, 0.1);
-            animation: highlight-fade 2s forwards;
-        }
-        
-        @keyframes highlight-fade {
-            0% { background-color: rgba(255, 255, 255, 0.2); }
-            100% { background-color: transparent; }
-        }
-
-        .message-actions {
-            display: none;
-            position: absolute;
-            right: 10px;
-            background-color: #333;
-            border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            z-index: 10;
-        }
-        
-        .message-actions button {
-            background: none;
-            border: none;
-            color: #e0e0e0;
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-        
-        .message-actions button:hover {
-            background-color: #444;
-        }
-        
-        .message:hover .message-actions {
-            display: block;
-        }
-        
-        .reply-info {
-            font-size: 0.8rem;
-            color: #888;
-            margin-bottom: 2px;
-            padding-left: 11ch;
-            border-left: 2px solid #555;
-            max-height: 1.2rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        .reply-info::before {
-            content: "↩ ";
-        }
-        
-        .highlighted-message {
-            background-color: rgba(255, 255, 0, 0.1);
-            animation: highlight-fade 2s forwards;
-        }
-        
-        @keyframes highlight-fade {
-            0% { background-color: rgba(255, 255, 0, 0.2); }
-            100% { background-color: transparent; }
-        }
-        
     </style>
 </head>
 <body>
@@ -924,51 +819,19 @@
             const message = chatInput.value.trim();
             
             if (message && socket) {
-                // Send message to server with reply data if applicable
-                const messageData = { message };
+                // Send message to server
+                socket.emit('chat_message', { message });
                 
-                if (currentReplyTo) {
-                    messageData.replyTo = currentReplyTo;
-                }
-                
-                socket.emit('chat_message', messageData);
-                
-                // Clear input and reset reply
+                // Clear input
                 chatInput.value = '';
                 chatInput.focus();
-                cancelReply();
             }
         });
         
         // Create message element with username side by side with message
-        function createMessageElement(sender, message, timestamp, isContinuation = false, color, replyData = null, messageId = null) {
+        function createMessageElement(sender, message, timestamp, isContinuation = false, color) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message';
-            
-            // Add message ID if provided
-            if (messageId) {
-                messageDiv.setAttribute('data-message-id', messageId);
-            }
-            
-            // Show reply content if this is a reply
-            if (replyData) {
-                const replyInfo = document.createElement('div');
-                replyInfo.className = 'reply-info';
-                replyInfo.textContent = `${replyData.sender}: ${replyData.message}`;
-                replyInfo.setAttribute('data-reply-to', replyData.messageId);
-                replyInfo.addEventListener('click', () => {
-                    // Scroll to and highlight the original message
-                    const originalMessage = document.querySelector(`.message[data-message-id="${replyData.messageId}"]`);
-                    if (originalMessage) {
-                        originalMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        originalMessage.classList.add('highlighted-message');
-                        setTimeout(() => {
-                            originalMessage.classList.remove('highlighted-message');
-                        }, 2000);
-                    }
-                });
-                messageDiv.appendChild(replyInfo);
-            }
             
             // Create username area (always 8 characters wide plus separator)
             const usernameArea = document.createElement('div');
@@ -1014,40 +877,42 @@
             
             messageDiv.appendChild(messageContent);
             
-            // Add message actions (reply button)
-            const actionsDiv = document.createElement('div');
-            actionsDiv.className = 'message-actions';
+            return messageDiv;
+        }
+        
+        // Display message in the chat
+        function displayMessage(sender, message, timestamp, color) {
+            const isContinuation = (sender === lastMessageSender);
+            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color);
             
-            const replyButton = document.createElement('button');
-            replyButton.textContent = 'Reply';
-            replyButton.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent event bubbling
-                startReply(messageId, sender, message);
-            });
+            chatMessages.appendChild(messageDiv);
+            lastMessageSender = sender;
             
-            actionsDiv.appendChild(replyButton);
-            messageDiv.appendChild(actionsDiv);
+            // Always scroll to bottom for new messages
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Create system message element
+        function createSystemMessageElement(message, timestamp) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'system-message';
+            
+            if (timestamp) {
+                messageDiv.textContent = `${message} (${formatTimestamp(timestamp)})`;
+            } else {
+                messageDiv.textContent = message;
+            }
             
             return messageDiv;
         }
         
         // Display system message in the chat
-        function displayMessage(sender, message, timestamp, color, replyData = null, messageId = null) {
-            const isContinuation = (sender === lastMessageSender) && !replyData;
-            const messageDiv = createMessageElement(sender, message, timestamp, isContinuation, color, replyData, messageId);
-            
+        function displaySystemMessage(message, timestamp) {
+            const messageDiv = createSystemMessageElement(message, timestamp);
             chatMessages.appendChild(messageDiv);
-            lastMessageSender = sender;
+            lastMessageSender = null; // Reset last sender after system message
             
-            // If this message is a reply to the current user, highlight it
-            if (replyData && replyData.sender === username) {
-                messageDiv.classList.add('highlighted-message');
-                setTimeout(() => {
-                    messageDiv.classList.remove('highlighted-message');
-                }, 2000);
-            }
-            
-            // Always scroll to bottom for new messages
+            // Always scroll to bottom for system messages
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
@@ -1075,67 +940,6 @@
                 
                 onlineUsers.appendChild(userItem);
             });
-        }
-
-        // Track current reply state
-        let currentReplyTo = null;
-        
-        // Start replying to a message
-        function startReply(messageId, sender, message) {
-            // Store reply information
-            currentReplyTo = {
-                messageId,
-                sender,
-                message
-            };
-            
-            // Update UI to show we're replying
-            const replyIndicator = document.getElementById('reply-indicator') || createReplyIndicator();
-            replyIndicator.textContent = `Replying to ${sender}: ${message.substring(0, 30)}${message.length > 30 ? '...' : ''}`;
-            replyIndicator.style.display = 'block';
-            
-            // Focus the input
-            chatInput.focus();
-        }
-        
-        // Create reply indicator element
-        function createReplyIndicator() {
-            const indicator = document.createElement('div');
-            indicator.id = 'reply-indicator';
-            indicator.style.padding = '5px 10px';
-            indicator.style.backgroundColor = '#333';
-            indicator.style.color = '#e0e0e0';
-            indicator.style.borderBottom = '1px solid #555';
-            indicator.style.fontSize = '0.9rem';
-            indicator.style.position = 'relative';
-            
-            // Add cancel button
-            const cancelBtn = document.createElement('button');
-            cancelBtn.textContent = '×';
-            cancelBtn.style.position = 'absolute';
-            cancelBtn.style.right = '5px';
-            cancelBtn.style.top = '5px';
-            cancelBtn.style.background = 'none';
-            cancelBtn.style.border = 'none';
-            cancelBtn.style.color = '#999';
-            cancelBtn.style.fontSize = '1.2rem';
-            cancelBtn.style.cursor = 'pointer';
-            cancelBtn.addEventListener('click', cancelReply);
-            
-            indicator.appendChild(cancelBtn);
-            
-            // Insert before the form
-            document.querySelector('.chat-form').insertAdjacentElement('beforebegin', indicator);
-            return indicator;
-        }
-        
-        // Cancel the current reply
-        function cancelReply() {
-            currentReplyTo = null;
-            const indicator = document.getElementById('reply-indicator');
-            if (indicator) {
-                indicator.style.display = 'none';
-            }
         }
         
     </script>
