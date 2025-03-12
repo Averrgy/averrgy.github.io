@@ -145,16 +145,15 @@
             padding: 0.3rem 0;
             max-width: 100%;
             word-wrap: break-word;
-            display: flex;
+            display: block;
+            white-space: nowrap;
         }
-
+        
         .message-info {
             font-size: 0.8rem;
             color: #aaa;
-            display: flex;
-            align-items: center;
-            margin-right: 0.5rem;
-            /* Remove the min-width: 4rem; to allow flexible sizing */
+            display: inline-block;
+            vertical-align: top;
         }
         
         .message-sender {
@@ -163,12 +162,19 @@
         }
 
         .message-separator {
-            margin: 0 0.5rem;
+            margin: 0;
+            white-space: pre;
         }
 
         .message-content {
-            flex: 1;
+            display: inline;
             word-break: break-word;
+            white-space: normal;
+        }
+
+        .continued-message {
+            margin-top: 0.2rem;
+            padding-top: 0;
         }
         
         .timestamp {
@@ -808,9 +814,11 @@
             messageDiv.className = 'message';
             
             if (!isContinuation) {
-                // Create message info section (username + timestamp)
+                // Create message info section (username + separator)
                 const messageInfo = document.createElement('div');
                 messageInfo.className = 'message-info';
+                messageInfo.style.display = 'inline-block';
+                messageInfo.style.textAlign = 'right';
                 
                 // Create sender element
                 const senderElement = document.createElement('span');
@@ -828,24 +836,25 @@
                 // Add separator
                 const separatorElement = document.createElement('span');
                 separatorElement.className = 'message-separator';
-                separatorElement.textContent = '~';
+                separatorElement.textContent = ' ~ ';
                 
                 // Assemble message info
                 messageInfo.appendChild(senderElement);
                 messageInfo.appendChild(separatorElement);
                 messageDiv.appendChild(messageInfo);
             } else {
-                // For continued messages, create an empty space with same width as username
-                const placeholder = document.createElement('span');
-                placeholder.style.visibility = 'hidden';
-                placeholder.textContent = lastMessageSender + '~';
-                messageDiv.appendChild(placeholder);
-                messageDiv.className = 'message continued-message';
+                // For continued messages, create an invisible spacer that matches the width of username + separator
+                const spacer = document.createElement('span');
+                spacer.style.display = 'inline-block';
+                spacer.style.visibility = 'hidden';
+                spacer.textContent = lastMessageSender + ' ~ ';
+                messageDiv.appendChild(spacer);
             }
             
             // Create message content
             const messageContent = document.createElement('div');
             messageContent.className = 'message-content';
+            messageContent.style.display = 'inline';
             messageContent.textContent = message;
             
             // Apply message color for the actual content
