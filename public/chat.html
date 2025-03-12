@@ -153,8 +153,8 @@
             color: #aaa;
             display: flex;
             align-items: center;
-            min-width: 4rem; /* Fixed width for message info area */
             margin-right: 0.5rem;
+            /* Remove the min-width: 4rem; to allow flexible sizing */
         }
         
         .message-sender {
@@ -178,7 +178,10 @@
         }
         
         .continued-message {
-            padding-left: 4.5rem; /* Match the combined width of message-info + margin */
+            /* Use text-indent instead of padding-left for better alignment */
+            text-indent: 0;
+            margin-left: 0;
+            padding-left: 0;
         }
         
         .system-message {
@@ -827,16 +830,16 @@
                 separatorElement.className = 'message-separator';
                 separatorElement.textContent = '~';
                 
-                // Add timestamp
-                const timestampElement = document.createElement('span');
-                timestampElement.className = 'timestamp';
-                timestampElement.textContent = formatTimestamp(timestamp);
-                
                 // Assemble message info
                 messageInfo.appendChild(senderElement);
                 messageInfo.appendChild(separatorElement);
                 messageDiv.appendChild(messageInfo);
             } else {
+                // For continued messages, create an empty space with same width as username
+                const placeholder = document.createElement('span');
+                placeholder.style.visibility = 'hidden';
+                placeholder.textContent = lastMessageSender + '~';
+                messageDiv.appendChild(placeholder);
                 messageDiv.className = 'message continued-message';
             }
             
