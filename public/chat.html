@@ -562,6 +562,18 @@
                     color: selectedColor
                 }
             });
+        
+            // Add socket event listeners AFTER the connection is established
+            socket.on('update_users', (data) => {
+                updateOnlineUsers(data.users);
+            });
+        
+            dndToggle.addEventListener('change', () => {
+                isDndEnabled = dndToggle.checked;
+                console.log(isDndEnabled);
+                socket.emit('dnd_toggle', isDndEnabled);
+            });
+        }
             
             // Socket events
             socket.on('connect', () => {
