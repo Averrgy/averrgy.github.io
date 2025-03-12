@@ -194,11 +194,8 @@
         <nav>
             <ul>
                 <li><a href="index.html">homepage</a></li>
-                <li><a href="#">about</a></li>
-                <li><a href="#">services</a></li>
                 <li><a href="chat.html">hatchat</a></li>
                 <li><a href="settings.html">settings</a></li>
-                <li><a href="#">contact</a></li>
             </ul>
         </nav>
     </header>
@@ -226,31 +223,6 @@
                 <button type="button" id="reset-profile" class="form-button">Reset Profile</button>
             </form>
         </div>
-        
-        <div class="settings-section">
-            <h2>Chat Password</h2>
-            <form id="password-form">
-                <div class="form-group">
-                    <label for="current-password">Current Password:</label>
-                    <input type="password" id="current-password" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label for="new-password">New Password:</label>
-                    <input type="password" id="new-password" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label for="confirm-password">Confirm New Password:</label>
-                    <input type="password" id="confirm-password" class="form-input" required>
-                </div>
-                <button type="submit" class="form-button">Change Password</button>
-            </form>
-        </div>
-        
-        <div class="settings-section">
-            <h2>Reset All Settings</h2>
-            <p>This will clear all your settings and reset your password to the default.</p>
-            <button id="reset-all" class="form-button danger">Reset All Settings</button>
-        </div>
     </div>
     
     <!-- Confirmation Modal -->
@@ -272,12 +244,7 @@
         const profileForm = document.getElementById('profile-form');
         const usernameInput = document.getElementById('username');
         const colorInput = document.getElementById('color');
-        const passwordForm = document.getElementById('password-form');
-        const currentPasswordInput = document.getElementById('current-password');
-        const newPasswordInput = document.getElementById('new-password');
-        const confirmPasswordInput = document.getElementById('confirm-password');
         const resetProfileBtn = document.getElementById('reset-profile');
-        const resetAllBtn = document.getElementById('reset-all');
         const successMessage = document.getElementById('success-message');
         const errorMessage = document.getElementById('error-message');
         const confirmModal = document.getElementById('confirm-modal');
@@ -367,44 +334,6 @@
             showSuccess('Profile updated successfully');
         });
         
-        // Handle password form submission
-        passwordForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const currentPassword = currentPasswordInput.value;
-            const newPassword = newPasswordInput.value;
-            const confirmPassword = confirmPasswordInput.value;
-            
-            // Get stored password or use default
-            const storedPassword = localStorage.getItem('chat_password') || 'hatty';
-            
-            // Verify current password
-            if (currentPassword !== storedPassword) {
-                showError('Current password is incorrect');
-                return;
-            }
-            
-            // Verify new password
-            if (newPassword.length === 0) {
-                showError('New password cannot be empty');
-                return;
-            }
-            
-            // Verify passwords match
-            if (newPassword !== confirmPassword) {
-                showError('New passwords do not match');
-                return;
-            }
-            
-            // Save new password
-            localStorage.setItem('chat_password', newPassword);
-            
-            // Clear form
-            passwordForm.reset();
-            
-            showSuccess('Password changed successfully');
-        });
-        
         // Handle reset profile button
         resetProfileBtn.addEventListener('click', () => {
             showConfirmation('Are you sure you want to reset your profile?', () => {
@@ -417,24 +346,6 @@
                 colorInput.value = '#FFFFFF';
                 
                 showSuccess('Profile has been reset');
-            });
-        });
-        
-        // Handle reset all button
-        resetAllBtn.addEventListener('click', () => {
-            showConfirmation('Are you sure you want to reset all settings? This cannot be undone.', () => {
-                // Reset everything to default
-                localStorage.removeItem('chat_username');
-                localStorage.removeItem('chat_color');
-                localStorage.removeItem('chat_password');
-                
-                // Reset forms
-                profileForm.reset();
-                passwordForm.reset();
-                usernameInput.value = '';
-                colorInput.value = '#FFFFFF';
-                
-                showSuccess('All settings have been reset');
             });
         });
     </script>
