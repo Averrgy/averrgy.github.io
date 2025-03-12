@@ -946,10 +946,10 @@
     const notificationSound = document.createElement('audio');
     notificationSound.id = 'notificationSound';
     const mp3Source = document.createElement('source');
-    mp3Source.src = 'notification.mp3';
+    mp3Source.src = 'sounds/notif.mp3';
     mp3Source.type = 'audio/mpeg';
     const wavSource = document.createElement('source');
-    wavSource.src = 'notification.wav';
+    wavSource.src = 'sounds/notif.wav';
     wavSource.type = 'audio/wav';
     notificationSound.appendChild(mp3Source);
     notificationSound.appendChild(wavSource);
