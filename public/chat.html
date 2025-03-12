@@ -371,6 +371,25 @@
             content: "Loading messages...";
             color: #999;
         }
+
+        .settings-button {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-family: DejaVu Sans Mono, monospace;
+            z-index: 100;
+            transition: background-color 0.3s;
+        }
+
+        .settings-button:hover {
+            background-color: #333;
+        }
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -935,6 +954,50 @@
                 onlineUsers.appendChild(userItem);
             });
         }
+
+        // Create the settings button element
+    function createSettingsButton() {
+        const settingsButton = document.createElement('button');
+        settingsButton.id = 'settings-button';
+        settingsButton.textContent = 'Settings';
+        settingsButton.className = 'settings-button';
+        
+        // Add styles
+        settingsButton.style.position = 'fixed';
+        settingsButton.style.bottom = '20px';
+        settingsButton.style.left = '20px';
+        settingsButton.style.backgroundColor = '#1a1a1a';
+        settingsButton.style.color = '#e0e0e0';
+        settingsButton.style.border = '1px solid #333';
+        settingsButton.style.borderRadius = '4px';
+        settingsButton.style.padding = '8px 12px';
+        settingsButton.style.cursor = 'pointer';
+        settingsButton.style.fontFamily = 'DejaVu Sans Mono, monospace';
+        settingsButton.style.zIndex = '100';
+        
+        // Add hover effect
+        settingsButton.addEventListener('mouseover', () => {
+            settingsButton.style.backgroundColor = '#333';
+        });
+        
+        settingsButton.addEventListener('mouseout', () => {
+            settingsButton.style.backgroundColor = '#1a1a1a';
+        });
+        
+        // Add click event to navigate to settings page
+        settingsButton.addEventListener('click', () => {
+            window.location.href = 'settings.html';
+        });
+        
+        return settingsButton;
+    }
+
+    // Add the settings button to the DOM
+    document.addEventListener('DOMContentLoaded', () => {
+        const settingsButton = createSettingsButton();
+        document.body.appendChild(settingsButton);
+    });
+        
     </script>
 </body>
 </html>
