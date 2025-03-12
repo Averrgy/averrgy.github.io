@@ -562,18 +562,6 @@
                     color: selectedColor
                 }
             });
-        
-            // Add socket event listeners AFTER the connection is established
-            socket.on('update_users', (data) => {
-                updateOnlineUsers(data.users);
-            });
-        
-            dndToggle.addEventListener('change', () => {
-                isDndEnabled = dndToggle.checked;
-                console.log(isDndEnabled);
-                socket.emit('dnd_toggle', isDndEnabled);
-            });
-        }
             
             // Socket events
             socket.on('connect', () => {
@@ -934,30 +922,25 @@
         // Update online users list
         function updateOnlineUsers(users) {
             onlineUsers.innerHTML = '';
+            
             users.forEach(user => {
                 const userItem = document.createElement('div');
                 userItem.className = 'user-item';
-        
+                
                 const userStatus = document.createElement('div');
                 userStatus.className = 'user-status';
-        
-                // Set status circle color based on DND status
-                if (user.dnd) { // Assuming your server sends user.dnd as true or false
-                    userStatus.style.backgroundColor = 'red'; // Red for DND
-                } else {
-                    userStatus.style.backgroundColor = '#4CAF50'; // Green for not DND
-                }
-        
+                
                 const userName = document.createElement('span');
-                userName.textContent = user.username;
-        
-                // Apply username color
-                if (userColors[user.username]) {
-                    userName.style.color = userColors[user.username];
+                userName.textContent = user === username ? `${user} (You)` : user;
+                
+                // Apply username color from server's userColors
+                if (userColors[user]) {
+                    userName.style.color = userColors[user];
                 }
-        
+                
                 userItem.appendChild(userStatus);
                 userItem.appendChild(userName);
+                
                 onlineUsers.appendChild(userItem);
             });
         }
