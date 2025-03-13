@@ -920,6 +920,31 @@
                     this.value = '';
                     return;
                 }
+
+                chatInput.addEventListener('paste', function(e) {
+                    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                    
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            const file = items[i].getAsFile();
+                            if (file) {
+                                // Check file size (5MB max)
+                                if (file.size > 5 * 1024 * 1024) {
+                                    alert('Pasted image is too large. Maximum size is 5MB.');
+                                    return;
+                                }
+                                
+                                e.preventDefault(); // Prevent pasting text
+                                selectedImage = file;
+                                chatInput.placeholder = `Image from clipboard selected. Type a message (optional) and press send.`;
+                                
+                                // Create a preview (optional)
+                                showImagePreview(file);
+                                break;
+                            }
+                        }
+                    }
+                });
                 
                 // Check file size (5MB max)
                 if (file.size > 5 * 1024 * 1024) {
