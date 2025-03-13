@@ -505,7 +505,7 @@
                 width: 300px;
                 background-color: #1a1a1a;
                 border-left: 1px solid #333;
-                display: flex;
+                display: none; /* Initially hidden */
                 flex-direction: column;
                 z-index: 50;
             }
@@ -633,7 +633,7 @@
             .main-content.gif-open .chat-container {
                 width: calc(100% - 300px);
             }
-            
+                        
             @keyframes spin {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
