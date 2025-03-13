@@ -1362,7 +1362,7 @@
         }
         
         // Add this code right after your variable declarations, before any other setup
-        // Notification sound setup
+        //  sound setup
         const notificationSound = new Audio();
         notificationSound.id = 'notificationSound';
         const mp3Source = document.createElement('source');
@@ -1396,7 +1396,7 @@
                 }
                 
                 // Reset to beginning and set volume
-                notificationSound.currentTime = 0;
+                notificationSound.currentTime = 1;
                 notificationSound.volume = 0.5;
                 
                 // Play with proper error handling
