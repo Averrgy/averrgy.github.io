@@ -622,7 +622,7 @@
         
         function initializeChat(selectedColor) {
             // Connect to the Socket.IO server with the username and color
-            socket = io('https://averrgy-github-io..com', {
+            socket = io('https://averrgy-github-io.onrender.com', {
                 query: {
                     username,
                     color: selectedColor
@@ -952,7 +952,7 @@
                         
                         try {
                             // Upload the image
-                            const response = await fetch('https://github.com/Averrgy/averrgy.github.io/tree/main/public/uploads', {
+                            const response = await fetch('https://averrgy-github-io.onrender.com/upload', {
                                 method: 'POST',
                                 body: formData,
                                 credentials: 'same-origin',
