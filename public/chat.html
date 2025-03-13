@@ -945,6 +945,61 @@
                         }
                     }
                 });
+
+                function showImagePreview(file) {
+                    // Remove any existing preview
+                    const existingPreview = document.getElementById('paste-preview');
+                    if (existingPreview) {
+                        existingPreview.remove();
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewContainer = document.createElement('div');
+                        previewContainer.id = 'paste-preview';
+                        previewContainer.style.position = 'absolute';
+                        previewContainer.style.bottom = '80px';
+                        previewContainer.style.left = '20px';
+                        previewContainer.style.backgroundColor = '#1a1a1a';
+                        previewContainer.style.padding = '10px';
+                        previewContainer.style.borderRadius = '4px';
+                        previewContainer.style.border = '1px solid #333';
+                        previewContainer.style.zIndex = '50';
+                        
+                        const preview = document.createElement('img');
+                        preview.src = e.target.result;
+                        preview.className = 'image-preview';
+                        preview.style.maxWidth = '150px';
+                        preview.style.maxHeight = '150px';
+                        
+                        const closeBtn = document.createElement('button');
+                        closeBtn.textContent = '✕';
+                        closeBtn.style.position = 'absolute';
+                        closeBtn.style.top = '5px';
+                        closeBtn.style.right = '5px';
+                        closeBtn.style.background = '#333';
+                        closeBtn.style.color = 'white';
+                        closeBtn.style.border = 'none';
+                        closeBtn.style.borderRadius = '50%';
+                        closeBtn.style.width = '20px';
+                        closeBtn.style.height = '20px';
+                        closeBtn.style.cursor = 'pointer';
+                        closeBtn.style.display = 'flex';
+                        closeBtn.style.alignItems = 'center';
+                        closeBtn.style.justifyContent = 'center';
+                        
+                        closeBtn.addEventListener('click', function() {
+                            previewContainer.remove();
+                            selectedImage = null;
+                            chatInput.placeholder = 'Type your message...';
+                        });
+                        
+                        previewContainer.appendChild(preview);
+                        previewContainer.appendChild(closeBtn);
+                        document.querySelector('.chat-container').appendChild(previewContainer);
+                    };
+                    reader.readAsDataURL(file);
+                }
                 
                 // Check file size (5MB max)
                 if (file.size > 5 * 1024 * 1024) {
