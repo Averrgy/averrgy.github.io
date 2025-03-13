@@ -654,6 +654,7 @@
             });
             
             socket.on('chat_message', (data) => {
+                console.log('Received message data:', data); // Add this line
                 displayMessage(data.username, data.message, data.timestamp, data.color, data.image);
             });
             
@@ -975,11 +976,20 @@
                             const result = await response.json();
                             
                             if (result.success) {
+                                // Convert relative path to absolute URL if needed
+                                let imagePath = result.filePath;
+                                if (imagePath && !imagePath.startsWith('http')) {
+                                    // If it's a relative path, convert it to absolute
+                                    const baseUrl = 'https://averrgy-github-io.onrender.com';
+                                    imagePath = baseUrl + (imagePath.startsWith('/') ? '' : '/') + imagePath;
+                                }
+                                
                                 // Send message with image path
                                 socket.emit('chat_message', { 
                                     message: message,
-                                    image: result.filePath
+                                    image: imagePath
                                 });
+
                             } else {
                                 alert('Failed to upload image: ' + (result.message || 'Unknown error'));
                             }
@@ -1065,7 +1075,7 @@
             }
             
             // Add image if present
-            if (image) {
+           if (image) {
                 const imgElement = document.createElement('img');
                 imgElement.src = image;
                 imgElement.className = 'message-image';
@@ -1087,7 +1097,7 @@
                 
                 messageContent.appendChild(imgElement);
             }
-            
+                        
             // Apply message color for the actual content
             if (color) {
                 messageContent.style.color = color;
