@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -636,6 +635,47 @@
             
             // Setup image upload after socket connection
             setupImageUpload();
+
+            // Add this after setupImageUpload() function call in initializeChat function
+            setupClipboardPaste();
+            
+            // Add this function to handle clipboard paste
+            function setupClipboardPaste() {
+                // Listen for paste events on the chat input
+                chatInput.addEventListener('paste', handlePaste);
+                
+                // Alternatively, listen for paste events anywhere in the document
+                // document.addEventListener('paste', handlePaste);
+            }
+            
+            function handlePaste(e) {
+                // Check if the paste event has any image items
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        // Get the image file from clipboard
+                        const file = items[i].getAsFile();
+                        
+                        // Check file size (5MB max)
+                        if (file.size > 5 * 1024 * 1024) {
+                            alert('Pasted image is too large. Max size is 5MB.');
+                            return;
+                        }
+                        
+                        // Store the pasted image and update UI
+                        selectedImage = file;
+                        chatInput.placeholder = `Image pasted. Type a message (optional) and press send.`;
+                        
+                        // Optionally show a preview of the pasted image
+                        showImagePreview(file);
+                        
+                        // Prevent the default paste action
+                        e.preventDefault();
+                        return;
+                    }
+                }
+            }
             
             // Socket events
             socket.on('connect', () => {
@@ -1321,8 +1361,9 @@
             return !document.hidden;
         }
         
+        // Add this code right after your variable declarations, before any other setup
         // Notification sound setup
-        const notificationSound = document.createElement('audio');
+        const notificationSound = new Audio();
         notificationSound.id = 'notificationSound';
         const mp3Source = document.createElement('source');
         mp3Source.src = 'sounds/notif.mp3';
@@ -1334,19 +1375,42 @@
         notificationSound.appendChild(wavSource);
         document.body.appendChild(notificationSound);
         
-        // Add error handling for audio
-        notificationSound.addEventListener('error', function() {
-            console.warn('Notification sound could not be loaded');
+        // Test the sound during page load
+        notificationSound.addEventListener('canplaythrough', () => {
+            console.log('Notification sound loaded successfully');
         });
         
+        // Add error handling for audio
+        notificationSound.addEventListener('error', function(e) {
+            console.warn('Notification sound could not be loaded', e);
+        });
+        
+        // Replace the existing playNotificationSound function with this one
         function playNotificationSound() {
             console.log('playNotificationSound called, DND:', isDndEnabled);
             if (!isDndEnabled) {
+                // Make sure the audio element exists
+                if (!notificationSound || !notificationSound.play) {
+                    console.warn('Notification sound element not properly initialized');
+                    return;
+                }
+                
+                // Reset to beginning and set volume
                 notificationSound.currentTime = 0;
                 notificationSound.volume = 0.5;
-                notificationSound.play().catch(err => {
-                    console.warn('Could not play notification sound:', err);
-                });
+                
+                // Play with proper error handling
+                const playPromise = notificationSound.play();
+                
+                // Modern browsers return a promise from play()
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.warn('Could not play notification sound:', error);
+                        
+                        // Common issue: browsers require user interaction before playing audio
+                        console.log('Note: Browsers often require user interaction before playing audio');
+                    });
+                }
             }
         }
         
