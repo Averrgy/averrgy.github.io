@@ -505,7 +505,7 @@
                 width: 300px;
                 background-color: #1a1a1a;
                 border-left: 1px solid #333;
-                display: none; /* Initially hidden */
+                display: flex;
                 flex-direction: column;
                 z-index: 50;
             }
@@ -633,7 +633,7 @@
             .main-content.gif-open .chat-container {
                 width: calc(100% - 300px);
             }
-                        
+            
             @keyframes spin {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
@@ -1638,8 +1638,6 @@
         let gifApiKey = 'hiXF4yhRdIhhvy6KVt3ozvPcYvgMDaYz'; // You'll need to get an API key from Giphy
         
         // Elements
-        JavaScript
-
         const gifToggle = document.getElementById('gif-toggle');
         const gifSidebar = document.getElementById('gif-sidebar');
         const closeGifSidebar = document.getElementById('close-gif-sidebar');
@@ -1649,128 +1647,81 @@
         const mainContent = document.querySelector('.main-content');
         const gifTabButtons = document.querySelectorAll('.gif-tab-btn');
         
-        if (gifToggle && gifSidebar && closeGifSidebar && gifContent && gifSearch && gifSearchBtn && mainContent && gifTabButtons.length > 0) {
-            // Toggle GIF sidebar
-            gifToggle.addEventListener('click', function() {
-                if (gifSidebar.style.display === 'none' || gifSidebar.style.display === '') {
-                    gifSidebar.style.display = 'flex';
-                    mainContent.classList.add('gif-open');
-                    console.log("GIF Sidebar Opened");
-                    loadGifs(currentGifTab);
-                } else {
-                    gifSidebar.style.display = 'none';
-                    mainContent.classList.remove('gif-open');
-                    console.log("GIF Sidebar Closed");
-                }
-            });
-        
-            // Close GIF sidebar
-            closeGifSidebar.addEventListener('click', function() {
+        // Toggle GIF sidebar
+        gifToggle.addEventListener('click', function() {
+            if (gifSidebar.style.display === 'none') {
+                gifSidebar.style.display = 'flex';
+                mainContent.classList.add('gif-open');
+                loadGifs(currentGifTab);
+            } else {
                 gifSidebar.style.display = 'none';
                 mainContent.classList.remove('gif-open');
-                console.log("GIF Sidebar Closed by close button");
-            });
-        
-            // Tab switching
-            gifTabButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    gifTabButtons.forEach(btn => btn.classList.remove('active'));
-                    this.classList.add('active');
-        
-                    currentGifTab = this.getAttribute('data-tab');
-                    loadGifs(currentGifTab);
-        
-                    // Show/hide search based on tab
-                    const searchContainer = document.querySelector('.gif-search-container');
-                    searchContainer.style.display = currentGifTab === 'search' ? 'flex' : 'none';
-                });
-            });
-        
-            // Search button click
-            gifSearchBtn.addEventListener('click', function() {
-                searchGifs(gifSearch.value.trim());
-            });
-        
-            // Search input enter key
-            gifSearch.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    searchGifs(this.value.trim());
-                }
-            });
-        
-            // Load GIFs based on selected tab
-            function loadGifs(tab) {
-                gifContent.innerHTML = '<div class="loading-indicator">Loading GIFs...</div>';
-        
-                if (tab === 'favorites') {
-                    if (favoriteGifs.length === 0) {
-                        gifContent.innerHTML = '<div class="empty-state">No favorite GIFs yet.<br>Add some from the Trending or Search tabs!</div>';
-                        return;
-                    }
-        
-                    displayGifs(favoriteGifs);
-                } else if (tab === 'trending') {
-                    fetch(`https://api.giphy.com/v1/gifs/trending?api_key=${gifApiKey}&limit=20`)
-                        .then(response => response.json())
-                        .then(data => {
-                            displayGifs(data.data);
-                        })
-                        .catch(error => {
-                            console.error('Error fetching trending GIFs:', error);
-                            gifContent.innerHTML = '<div class="empty-state">Error loading GIFs. Please try again.</div>';
-                        });
-                } else if (tab === 'search') {
-                  searchGifs(gifSearch.value.trim());
-                }
             }
+        });
         
-            // Search GIFs
-            function searchGifs(query) {
-                if (!query) {
-                    gifContent.innerHTML = '<div class="empty-state">Please enter a search term</div>';
+        // Close GIF sidebar
+        closeGifSidebar.addEventListener('click', function() {
+            gifSidebar.style.display = 'none';
+            mainContent.classList.remove('gif-open');
+        });
+        
+        // Tab switching
+        gifTabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                gifTabButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                currentGifTab = this.getAttribute('data-tab');
+                loadGifs(currentGifTab);
+                
+                // Show/hide search based on tab
+                const searchContainer = document.querySelector('.gif-search-container');
+                searchContainer.style.display = currentGifTab === 'search' ? 'flex' : 'none';
+            });
+        });
+        
+        // Search button click
+        gifSearchBtn.addEventListener('click', function() {
+            searchGifs(gifSearch.value.trim());
+        });
+        
+        // Search input enter key
+        gifSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                searchGifs(this.value.trim());
+            }
+        });
+        
+        // Load GIFs based on selected tab
+        function loadGifs(tab) {
+            gifContent.innerHTML = '<div class="loading-indicator">Loading GIFs...</div>';
+            
+            if (tab === 'favorites') {
+                if (favoriteGifs.length === 0) {
+                    gifContent.innerHTML = '<div class="empty-state">No favorite GIFs yet.<br>Add some from the Trending or Search tabs!</div>';
                     return;
                 }
-        
-                gifContent.innerHTML = '<div class="loading-indicator">Searching GIFs...</div>';
-        
-                fetch(`https://api.giphy.com/v1/gifs/search?api_key=${gifApiKey}&q=${encodeURIComponent(query)}&limit=20`)
+                
+                displayGifs(favoriteGifs);
+            } else if (tab === 'trending') {
+                fetch(`https://api.giphy.com/v1/gifs/trending?api_key=${gifApiKey}&limit=20`)
                     .then(response => response.json())
                     .then(data => {
-                        if (data.data.length === 0) {
-                            gifContent.innerHTML = '<div class="empty-state">No GIFs found for your search.</div>';
-                            return;
-                        }
                         displayGifs(data.data);
                     })
                     .catch(error => {
-                        console.error('Error searching GIFs:', error);
-                        gifContent.innerHTML = '<div class="empty-state">Error searching GIFs. Please try again.</div>';
+                        console.error('Error fetching trending GIFs:', error);
+                        gifContent.innerHTML = '<div class="empty-state">Error loading GIFs. Please try again.</div>';
                     });
             }
-        
-        } else {
-            if (!gifToggle) console.error("gifToggle element not found.");
-            if (!gifSidebar) console.error("gifSidebar element not found.");
-            if (!closeGifSidebar) console.error("closeGifSidebar element not found.");
-            if (!gifContent) console.error("gifContent element not found.");
-            if (!gifSearch) console.error("gifSearch element not found.");
-            if (!gifSearchBtn) console.error("gifSearchBtn element not found.");
-            if (!mainContent) console.error("mainContent element not found.");
-            if (gifTabButtons.length === 0) console.error("gifTabButtons elements not found.");
         }
         
-        // Placeholder variables and functions (replace with your actual implementation)
-        let currentGifTab = 'trending'; // Initialize with a default tab
-        let favoriteGifs = []; // Array to store favorite GIFs
-        const gifApiKey = 'YOUR_GIPHY_API_KEY'; // Replace with your Giphy API key
-        
-        function displayGifs(gifs) {
-            let gifHtml = '';
-            gifs.forEach(gif => {
-                gifHtml += `<img src="${gif.images.fixed_width.url}" alt="${gif.title}" class="gif-item">`;
-            });
-            gifContent.innerHTML = gifHtml;
-        }
+        // Search GIFs
+        function searchGifs(query) {
+            if (!query) {
+                gifContent.innerHTML = '<div class="empty-state">Please enter a search term</div>';
+                return;
+            }
             
             gifContent.innerHTML = '<div class="loading-indicator">Searching GIFs...</div>';
             
