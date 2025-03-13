@@ -1383,6 +1383,8 @@
         // Add error handling for audio
         notificationSound.addEventListener('error', function(e) {
             console.warn('Notification sound could not be loaded', e);
+            console.warn('Audio element error code:', e.target.error.code); // Get the error code
+            console.warn('Audio element error message:', e.target.error.message); // Get the error message
         });
         
         // Replace the existing playNotificationSound function with this one
